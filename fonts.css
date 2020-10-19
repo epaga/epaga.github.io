@@ -1,0 +1,138 @@
+@font-face {
+   font-family: "Cinzel Bold";
+   src: url("fonts/Cinzel-Bold.woff") format("woff"), url("fonts/Cinzel-Bold.eot") format("embedded-opentype"), url("fonts/Cinzel-Bold.otf") format("opentype");
+   font-weight: bold;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans SemiBold.woff") format("woff"), url("fonts/Gill Sans SemiBold.eot") format("embedded-opentype"), url("fonts/Gill Sans SemiBold.ttf") format("truetype"), url("fonts/Gill Sans SemiBold.svg") format("svg");
+   font-weight: bold;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans Italic.woff") format("woff"), url("fonts/Gill Sans Italic.eot") format("embedded-opentype"), url("fonts/Gill Sans Italic.ttf") format("truetype"), url("fonts/Gill Sans Italic.svg") format("svg");
+   font-weight: normal;
+   font-style: italic;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans UltraBold.woff") format("woff"), url("fonts/Gill Sans UltraBold.eot") format("embedded-opentype"), url("fonts/Gill Sans UltraBold.ttf") format("truetype"), url("fonts/Gill Sans UltraBold.svg") format("svg");
+   font-weight: bold;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans Bold Italic.woff") format("woff"), url("fonts/Gill Sans Bold Italic.eot") format("embedded-opentype"), url("fonts/Gill Sans Bold Italic.ttf") format("truetype"), url("fonts/Gill Sans Bold Italic.svg") format("svg");
+   font-weight: bold;
+   font-style: italic;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans.woff") format("woff"), url("fonts/Gill Sans.eot") format("embedded-opentype"), url("fonts/Gill Sans.ttf") format("truetype"), url("fonts/Gill Sans.svg") format("svg");
+   font-weight: normal;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans Bold.woff") format("woff"), url("fonts/Gill Sans Bold.eot") format("embedded-opentype"), url("fonts/Gill Sans Bold.ttf") format("truetype"), url("fonts/Gill Sans Bold.svg") format("svg");
+   font-weight: bold;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans Light.woff") format("woff"), url("fonts/Gill Sans Light.eot") format("embedded-opentype"), url("fonts/Gill Sans Light.ttf") format("truetype"), url("fonts/Gill Sans Light.svg") format("svg");
+   font-weight: normal;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans SemiBold Italic.woff") format("woff"), url("fonts/Gill Sans SemiBold Italic.eot") format("embedded-opentype"), url("fonts/Gill Sans SemiBold Italic.ttf") format("truetype"), url("fonts/Gill Sans SemiBold Italic.svg") format("svg");
+   font-weight: bold;
+   font-style: italic;
+}
+@font-face {
+   font-family: "Gill Sans";
+   src: url("fonts/Gill Sans Light Italic.woff") format("woff"), url("fonts/Gill Sans Light Italic.eot") format("embedded-opentype"), url("fonts/Gill Sans Light Italic.ttf") format("truetype"), url("fonts/Gill Sans Light Italic.svg") format("svg");
+   font-weight: normal;
+   font-style: italic;
+}
+@font-face {
+   font-family: "Otama.ep";
+   src: url("fonts/Otama-ep.woff") format("woff"), url("fonts/Otama-ep.eot") format("embedded-opentype"), url("fonts/Otama-ep.otf") format("opentype");
+   font-weight: normal;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Antonio";
+   src: url("fonts/Antonio Bold.woff") format("woff"), url("fonts/Antonio Bold.eot") format("embedded-opentype"), url("fonts/Antonio Bold.ttf") format("truetype"), url("fonts/Antonio Bold.svg") format("svg");
+   font-weight: bold;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Antonio";
+   src: url("fonts/Antonio Light.woff") format("woff"), url("fonts/Antonio Light.eot") format("embedded-opentype"), url("fonts/Antonio Light.ttf") format("truetype"), url("fonts/Antonio Light.svg") format("svg");
+   font-weight: normal;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Antonio";
+   src: url("fonts/Antonio Regular.woff") format("woff"), url("fonts/Antonio Regular.eot") format("embedded-opentype"), url("fonts/Antonio Regular.ttf") format("truetype"), url("fonts/Antonio Regular.svg") format("svg");
+   font-weight: normal;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Antonio";
+   src: url("fonts/Antonio-Bold.woff") format("woff"), url("fonts/Antonio-Bold.eot") format("embedded-opentype"), url("fonts/Antonio-Bold.ttf") format("truetype"), url("fonts/Antonio-Bold.svg") format("svg");
+   font-weight: bold;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Antonio";
+   src: url("fonts/Antonio-Light.woff") format("woff"), url("fonts/Antonio-Light.eot") format("embedded-opentype"), url("fonts/Antonio-Light.ttf") format("truetype"), url("fonts/Antonio-Light.svg") format("svg");
+   font-weight: normal;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Antonio";
+   src: url("fonts/Antonio-Regular.woff") format("woff"), url("fonts/Antonio-Regular.eot") format("embedded-opentype"), url("fonts/Antonio-Regular.ttf") format("truetype"), url("fonts/Antonio-Regular.svg") format("svg");
+   font-weight: normal;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Open Sans Semibold";
+   src: url("fonts/Open Sans Semibold.woff") format("woff"), url("fonts/Open Sans Semibold.eot") format("embedded-opentype"), url("fonts/Open Sans Semibold.ttf") format("truetype"), url("fonts/Open Sans Semibold.svg") format("svg");
+   font-weight: bold;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Open Sans Semibold";
+   src: url("fonts/Open Sans Semibold Italic.woff") format("woff"), url("fonts/Open Sans Semibold Italic.eot") format("embedded-opentype"), url("fonts/Open Sans Semibold Italic.ttf") format("truetype"), url("fonts/Open Sans Semibold Italic.svg") format("svg");
+   font-weight: bold;
+   font-style: italic;
+}
+@font-face {
+   font-family: "Open Sans Semibold";
+   src: url("fonts/Open-Sans-Semibold.woff") format("woff"), url("fonts/Open-Sans-Semibold.eot") format("embedded-opentype"), url("fonts/Open-Sans-Semibold.ttf") format("truetype"), url("fonts/Open-Sans-Semibold.svg") format("svg");
+   font-weight: bold;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Open Sans Semibold";
+   src: url("fonts/Open-Sans-Semibold-Italic.woff") format("woff"), url("fonts/Open-Sans-Semibold-Italic.eot") format("embedded-opentype"), url("fonts/Open-Sans-Semibold-Italic.ttf") format("truetype"), url("fonts/Open-Sans-Semibold-Italic.svg") format("svg");
+   font-weight: bold;
+   font-style: italic;
+}
+@font-face {
+   font-family: "Gill Sans Light";
+   src: url("fonts/Gill Sans Light.woff") format("woff"), url("fonts/Gill Sans Light.eot") format("embedded-opentype"), url("fonts/Gill Sans Light.ttf") format("truetype"), url("fonts/Gill Sans Light.svg") format("svg");
+   font-weight: normal;
+   font-style: normal;
+}
+@font-face {
+   font-family: "Gill Sans SemiBold";
+   src: url("fonts/Gill Sans SemiBold.woff") format("woff"), url("fonts/Gill Sans SemiBold.eot") format("embedded-opentype"), url("fonts/Gill Sans SemiBold.ttf") format("truetype"), url("fonts/Gill Sans SemiBold.svg") format("svg");
+   font-weight: bold;
+   font-style: normal;
+}
