@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2ff"/>
+      <stop offset="100%" stop-color="#d8d9ff"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5ba7ff"/>
+      <stop offset="100%" stop-color="#74e4c1"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="480" fill="url(#bg)" rx="32"/>
+  <rect x="80" y="90" width="640" height="300" rx="28" fill="#ffffff" opacity="0.95"/>
+  <rect x="110" y="160" width="170" height="160" rx="18" fill="url(#card)"/>
+  <rect x="300" y="160" width="380" height="38" rx="10" fill="#f0f4ff"/>
+  <rect x="300" y="212" width="240" height="26" rx="8" fill="#eef2ff"/>
+  <rect x="300" y="254" width="330" height="18" rx="8" fill="#e3e8ff"/>
+  <rect x="300" y="284" width="260" height="18" rx="8" fill="#e3e8ff"/>
+  <rect x="300" y="314" width="290" height="18" rx="8" fill="#e3e8ff"/>
+  <circle cx="150" cy="200" r="16" fill="#ffffff"/>
+  <circle cx="210" cy="200" r="16" fill="#ffffff"/>
+  <circle cx="150" cy="258" r="16" fill="#ffffff"/>
+  <circle cx="210" cy="258" r="16" fill="#ffffff"/>
+  <circle cx="150" cy="316" r="16" fill="#ffffff"/>
+  <circle cx="210" cy="316" r="16" fill="#ffffff"/>
+  <text x="110" y="128" font-family="'Segoe UI', sans-serif" font-weight="700" font-size="30" fill="#2c2f46">Mindscope</text>
+  <text x="300" y="192" font-family="'Segoe UI', sans-serif" font-weight="700" font-size="22" fill="#2c2f46">Nested outliner meets mind-map</text>
+  <text x="300" y="240" font-family="'Segoe UI', sans-serif" font-size="18" fill="#4a4e6a">Tap any node to zoom in and organize ideas.</text>
+</svg>
