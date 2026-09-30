@@ -1,0 +1,146 @@
+<title>Bibelquiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@500;700&family=Alegreya+Sans:wght@400;500&display=swap">
+<style>
+  /* Layout: eine ruhige, schmale Spalte – Platzhalter bis das Quiz steht */
+  :root {
+    --bg: #eef1f3;
+    --surface: #ffffff;
+    --ink: #1c2a3a;
+    --muted: #5a6878;
+    --accent: #2f5d8a;
+    --line: #d5dce3;
+    --font-display: "Alegreya", Georgia, "Times New Roman", serif;
+    --font-body: "Alegreya Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10161d; --surface: #18212b; --ink: #e6ecf2;
+      --muted: #98a6b5; --accent: #8fb6e0; --line: #2a3642;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10161d; --surface: #18212b; --ink: #e6ecf2;
+    --muted: #98a6b5; --accent: #8fb6e0; --line: #2a3642;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    padding-inline: 16px;
+    padding-block: 3rem 2.5rem;
+  }
+  main {
+    max-width: 34rem;
+    margin-inline: auto;
+    display: grid;
+    gap: 1.75rem;
+  }
+  .status {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+  }
+  .status::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.5rem, 9vw, 3.5rem);
+    line-height: 1.05;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lead {
+    margin: 0;
+    color: var(--muted);
+    max-width: 60ch;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.25rem;
+    margin: 0;
+  }
+  section {
+    display: grid;
+    gap: 0.75rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem;
+  }
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  li {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    align-items: baseline;
+  }
+  li .n {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--accent);
+  }
+  li span:last-child { min-width: 0; }
+  li small { display: block; color: var(--muted); font-size: 0.9rem; }
+  .facts {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  footer {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+
+<main>
+  <span class="status">Online · Schritt 1: Hosting-Test</span>
+
+  <div>
+    <h1>Bibelquiz</h1>
+  </div>
+  <p class="lead">Diese Seite ist absichtlich noch fast leer. Sie zeigt nur, dass die Adresse funktioniert, auch vom Handy aus. Hier entsteht als Nächstes das Quiz.</p>
+
+  <section aria-labelledby="stufen">
+    <h2 id="stufen">Geplante Schwierigkeitsstufen</h2>
+    <ol>
+      <li><span class="n">1</span><span>Einsteiger<small>Für Neugierige ohne Vorwissen</small></span></li>
+      <li><span class="n">2</span><span>Neu im Glauben<small>Für frische Christen</small></span></li>
+      <li><span class="n">3</span><span>Erfahren<small>Für Christen mit guter Bibelkenntnis</small></span></li>
+      <li><span class="n">4</span><span>Theologie<small>Für studierte Theologen</small></span></li>
+    </ol>
+    <p class="facts">Je Stufe etwa 100 Fragen mit vier Antworten. Punkte gibt es für richtige Antworten, dazu einen Bonus für schnelles Antworten.</p>
+  </section>
+
+  <footer>Seite geladen: <span id="loaded">–</span></footer>
+</main>
+
+<script>
+  document.getElementById("loaded").textContent =
+    new Date().toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
+</script>
