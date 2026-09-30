@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bibelquiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@500;700&family=Alegreya+Sans:wght@400;500&display=swap">
+<style>
+  /* Layout: eine schmale Spalte, ein Bildschirm pro Schritt (Start → Frage → Ergebnis) */
+  :root {
+    --bg: #eef1f3;
+    --surface: #ffffff;
+    --surface-2: #e2e7ec;
+    --ink: #1c2a3a;
+    --muted: #5a6878;
+    --accent: #2f5d8a;
+    --accent-ink: #ffffff;
+    --line: #d5dce3;
+    --good: #2e7d4f;
+    --good-bg: #e2f2e8;
+    --bad: #b3362f;
+    --bad-bg: #f8e3e1;
+    --radius: 14px;
+    --font-display: "Alegreya", Georgia, "Times New Roman", serif;
+    --font-body: "Alegreya Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10161d; --surface: #18212b; --surface-2: #232e3a; --ink: #e6ecf2;
+      --muted: #98a6b5; --accent: #8fb6e0; --accent-ink: #0f1a26; --line: #2c3845;
+      --good: #6fcf97; --good-bg: #173022; --bad: #f08a80; --bad-bg: #3a1d1b;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10161d; --surface: #18212b; --surface-2: #232e3a; --ink: #e6ecf2;
+    --muted: #98a6b5; --accent: #8fb6e0; --accent-ink: #0f1a26; --line: #2c3845;
+    --good: #6fcf97; --good-bg: #173022; --bad: #f08a80; --bad-bg: #3a1d1b;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  :root { padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px); }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 1.5rem 3rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app { max-width: 36rem; margin-inline: auto; }
+  .screen { display: grid; gap: 1.25rem; }
+  p { margin: 0; }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.4rem, 9vw, 3.25rem);
+    line-height: 1.05;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .eyebrow, .label {
+    font-size: 0.78rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .lead { color: var(--muted); max-width: 60ch; }
+  .group { display: grid; gap: 0.5rem; }
+
+  /* Rundenlänge */
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 4px;
+    background: var(--surface-2);
+    border-radius: 12px;
+  }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label {
+    text-align: center;
+    padding: 0.55rem 0.5rem;
+    border-radius: 9px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .seg input:checked + label { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.1); }
+  .seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Stufen */
+  .levels { display: grid; gap: 0.75rem; }
+  .level {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 1rem;
+    row-gap: 0.1rem;
+    align-items: center;
+    width: 100%;
+    padding: 0.95rem 1.1rem;
+    text-align: left;
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .level:hover { border-color: var(--accent); }
+  .level:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .level > span:not(.meter) { min-width: 0; }
+  .meter { grid-row: span 3; display: flex; gap: 3px; align-items: flex-end; height: 30px; }
+  .meter i { width: 6px; border-radius: 2px; background: var(--line); }
+  .meter i:nth-child(1) { height: 40%; }
+  .meter i:nth-child(2) { height: 60%; }
+  .meter i:nth-child(3) { height: 80%; }
+  .meter i:nth-child(4) { height: 100%; }
+  .meter i.on { background: var(--accent); }
+  .lv-name { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; line-height: 1.2; }
+  .lv-who { color: var(--muted); font-size: 0.95rem; }
+  .lv-meta { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+  .lv-meta b { color: var(--ink); font-weight: 500; }
+  .rules { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+
+  /* Frage */
+  .topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .topline strong { color: var(--ink); font-weight: 500; }
+  .topright { display: inline-flex; align-items: center; gap: 0.75rem; margin-left: auto; }
+  .quit {
+    font: inherit;
+    font-size: 0.85rem;
+    background: none;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+    cursor: pointer;
+  }
+  .quit.armed { color: var(--bad); border-color: var(--bad); }
+  .progress { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+  .progress i { display: block; height: 100%; background: var(--muted); }
+  .timer {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.35rem 0.75rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer strong { color: var(--ink); font-weight: 500; }
+  .track { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+  .track i { display: block; height: 100%; background: var(--accent); transform-origin: left center; }
+  .question {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.35rem, 5vw, 1.6rem);
+    line-height: 1.3;
+    margin: 0;
+    text-wrap: pretty;
+  }
+  .answers { display: grid; gap: 0.6rem; }
+  .answer {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
+  }
+  .answer .key {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+  .answer .txt { min-width: 0; overflow-wrap: anywhere; }
+  .answer:hover:not(:disabled) { border-color: var(--accent); }
+  .answer:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .answer:disabled { cursor: default; }
+  .answer.is-correct { background: var(--good-bg); border-color: var(--good); }
+  .answer.is-correct .key { background: var(--good); color: var(--surface); }
+  .answer.is-wrong { background: var(--bad-bg); border-color: var(--bad); }
+  .answer.is-wrong .key { background: var(--bad); color: var(--surface); }
+  .answer.is-dim { opacity: 0.5; }
+  .feedback {
+    display: grid;
+    gap: 0.3rem;
+    padding: 1rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .feedback .head { font-weight: 500; font-size: 1.05rem; }
+  .feedback.ok .head { color: var(--good); }
+  .feedback.no .head { color: var(--bad); }
+  .sub { color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: 0.85rem 1.2rem;
+    font: inherit;
+    font-weight: 500;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .actions { display: grid; gap: 0.6rem; }
+
+  /* Ergebnis */
+  .score {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 14vw, 4.5rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .score small { font-family: var(--font-body); font-weight: 400; font-size: 1rem; color: var(--muted); }
+  .chip {
+    justify-self: start;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip.best { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0; }
+  .stats div {
+    min-width: 0;
+    padding: 0.7rem 0.8rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .stats dt { font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+  .stats dd { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .review { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+  .review li {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .review .wq { font-weight: 500; }
+  .review .yours { color: var(--bad); }
+  .review .right { color: var(--good); }
+  .review .ref { color: var(--muted); font-size: 0.85rem; }
+  .allright { color: var(--good); font-weight: 500; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .level, .answer { transition: none; }
+  }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <section class="screen" id="start">
+    <p class="eyebrow">Vier Stufen · 400 Fragen</p>
+    <h1>Bibelquiz</h1>
+    <p class="lead">Wähle eine Stufe und tippe die richtige Antwort an. Je schneller du richtig liegst, desto mehr Punkte bekommst du.</p>
+
+    <div class="group">
+      <span class="label" id="len-label">Fragen pro Runde</span>
+      <div class="seg" role="radiogroup" aria-labelledby="len-label">
+        <input type="radio" name="len" id="len-10" value="10"><label for="len-10">10</label>
+        <input type="radio" name="len" id="len-20" value="20"><label for="len-20">20</label>
+        <input type="radio" name="len" id="len-100" value="100"><label for="len-100">Alle 100</label>
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="label">Stufe wählen</span>
+      <div class="levels" id="levels"></div>
+    </div>
+
+    <p class="rules">Richtige Antwort: 100 Punkte. Dazu kommt ein Tempo-Bonus von bis zu 100 Punkten, der in 20 Sekunden auf 0 sinkt. Falsche Antwort: 0 Punkte.</p>
+  </section>
+
+  <section class="screen" id="quiz" hidden>
+    <div class="topline">
+      <span><strong id="q-level"></strong> · Frage <span id="q-pos"></span></span>
+      <span class="topright">
+        <span>Punkte <strong id="q-score"></strong></span>
+        <button type="button" class="quit" id="quit">Beenden</button>
+      </span>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="q-progress"></i></div>
+    <div class="timer">
+      <span>Tempo-Bonus <strong id="t-bonus">100</strong></span>
+      <span id="t-time">0,0 s</span>
+      <div class="track" aria-hidden="true"><i id="t-bar"></i></div>
+    </div>
+    <h2 class="question" id="q-text"></h2>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback" aria-live="polite" hidden>
+      <p class="head" id="fb-head"></p>
+      <p id="fb-answer"></p>
+      <p class="sub" id="fb-sub"></p>
+    </div>
+    <button type="button" class="btn primary" id="next" hidden>Nächste Frage</button>
+  </section>
+
+  <section class="screen" id="result" hidden>
+    <p class="eyebrow" id="r-title"></p>
+    <p class="score" id="r-score"></p>
+    <span class="chip" id="r-best"></span>
+    <dl class="stats">
+      <div><dt>Richtig</dt><dd id="r-right"></dd></div>
+      <div><dt>Gesamtzeit</dt><dd id="r-time"></dd></div>
+      <div><dt>Ø pro Frage</dt><dd id="r-avg"></dd></div>
+    </dl>
+    <div class="actions">
+      <button type="button" class="btn primary" id="again">Nochmal spielen</button>
+      <button type="button" class="btn ghost" id="home">Stufe wechseln</button>
+    </div>
+    <div class="group">
+      <span class="label" id="r-review-label">Zum Nachlesen</span>
+      <ul class="review" id="r-review"></ul>
+    </div>
+  </section>
+</div>
+<script>
+// Aufbau jeder Frage: [Frage, richtige Antwort, falsch, falsch, falsch, Bibelstelle]
+const Q1 = [
+  ["Wie heißt der erste Mensch in der Bibel?", "Adam", "Noah", "Abraham", "Mose", "1. Mose 2"],
+  ["Wie heißt die erste Frau in der Bibel?", "Eva", "Maria", "Sara", "Rut", "1. Mose 3,20"],
+  ["Wer baute auf Gottes Befehl eine große Arche?", "Noah", "Mose", "David", "Petrus", "1. Mose 6"],
+  ["In wie vielen Tagen erschafft Gott nach 1. Mose 1 die Welt, bevor er ruht?", "Sechs", "Drei", "Sieben", "Zehn", "1. Mose 1–2"],
+  ["In welcher Stadt wurde Jesus geboren?", "Bethlehem", "Jerusalem", "Nazareth", "Rom", "Lukas 2,4–7"],
+  ["Wie heißt die Mutter von Jesus?", "Maria", "Martha", "Elisabeth", "Eva", "Lukas 1,26–31"],
+  ["Wer besiegte den Riesen Goliat mit einer Steinschleuder?", "David", "Simson", "Saul", "Salomo", "1. Samuel 17"],
+  ["Wer wurde von einem großen Fisch verschluckt?", "Jona", "Daniel", "Josef", "Elia", "Jona 2"],
+  ["Wer wurde in eine Löwengrube geworfen und überlebte?", "Daniel", "Jona", "Mose", "Paulus", "Daniel 6"],
+  ["Wie viele Gebote schrieb Gott für Mose auf zwei Steintafeln?", "Zehn", "Sieben", "Zwölf", "Drei", "5. Mose 4,13"],
+  ["Wie viele Apostel wählte Jesus als engsten Kreis aus?", "Zwölf", "Sieben", "Zehn", "Vierzig", "Markus 3,13–19"],
+  ["Welcher Jünger verriet Jesus?", "Judas Iskariot", "Petrus", "Johannes", "Thomas", "Matthäus 26,14–16"],
+  ["Welches Fest feiern Christen zur Erinnerung an die Auferstehung Jesu?", "Ostern", "Weihnachten", "Pfingsten", "Erntedank", "Matthäus 28"],
+  ["Was feiern Christen an Weihnachten?", "Die Geburt von Jesus", "Die Auferstehung von Jesus", "Die Himmelfahrt von Jesus", "Den Auszug aus Ägypten", "Lukas 2"],
+  ["Wie heißt der Garten, in dem Adam und Eva lebten?", "Garten Eden", "Garten Gethsemane", "Hängende Gärten von Babylon", "Garten von Kanaan", "1. Mose 2,8"],
+  ["Welches Tier verführte Eva, von der verbotenen Frucht zu essen?", "Eine Schlange", "Ein Löwe", "Ein Rabe", "Ein Esel", "1. Mose 3"],
+  ["Wer führte das Volk Israel aus der Sklaverei in Ägypten?", "Mose", "Abraham", "Noah", "David", "2. Mose 12–14"],
+  ["Durch welches Meer zogen die Israeliten trockenen Fußes?", "Das Schilfmeer (Rote Meer)", "Das Tote Meer", "Das Mittelmeer", "Das Schwarze Meer", "2. Mose 14"],
+  ["Wie heißen die zwei großen Teile der christlichen Bibel?", "Altes und Neues Testament", "Tora und Koran", "Evangelium und Talmud", "Psalter und Katechismus", ""],
+  ["Wie nennt man die vier Bücher über das Leben von Jesus?", "Evangelien", "Psalmen", "Chroniken", "Sprüche", ""],
+  ["Wie heißt das erste Buch der Bibel?", "1. Mose (Genesis)", "Matthäus", "Psalmen", "Offenbarung", ""],
+  ["Wie heißt das letzte Buch der Bibel?", "Die Offenbarung", "Maleachi", "Judas", "Die Apostelgeschichte", ""],
+  ["Welches Gebet lehrte Jesus seine Jünger?", "Das Vaterunser", "Das Ave Maria", "Das Glaubensbekenntnis", "Das Tischgebet", "Matthäus 6,9–13"],
+  ["Worin lag das neugeborene Jesuskind?", "In einer Krippe", "In einem Boot", "In einem goldenen Bett", "In einem Zelt", "Lukas 2,7"],
+  ["Wer folgte einem Stern, um das Jesuskind zu finden?", "Weise (Sterndeuter) aus dem Osten", "Hirten vom Feld", "Römische Soldaten", "Priester aus dem Tempel", "Matthäus 2,1–2"],
+  ["Wem verkündeten Engel in der Nacht als Erstes die Geburt von Jesus?", "Hirten auf dem Feld", "Den Weisen aus dem Osten", "König Herodes", "Den Priestern im Tempel", "Lukas 2,8–12"],
+  ["Welche Geschenke brachten die Weisen dem Jesuskind?", "Gold, Weihrauch und Myrrhe", "Brot, Wein und Öl", "Silber, Seide und Salz", "Lämmer, Tauben und Ziegen", "Matthäus 2,11"],
+  ["Wie starb Jesus?", "Er wurde gekreuzigt", "Er wurde gesteinigt", "Er wurde enthauptet", "Er starb an Altersschwäche", "Markus 15"],
+  ["Am wievielten Tag nach seinem Tod ist Jesus laut Bibel auferstanden?", "Am dritten Tag", "Am siebten Tag", "Nach vierzig Tagen", "Nach einem Jahr", "1. Korinther 15,4"],
+  ["Was verwandelte Jesus auf der Hochzeit zu Kana?", "Wasser in Wein", "Steine in Brot", "Wein in Wasser", "Sand in Gold", "Johannes 2,1–11"],
+  ["Auf welchem Tier ritt Jesus in Jerusalem ein?", "Auf einem Esel", "Auf einem Pferd", "Auf einem Kamel", "Auf einem Ochsen", "Matthäus 21,1–9"],
+  ["Wie lange regnete es bei der Sintflut?", "40 Tage und 40 Nächte", "7 Tage", "100 Tage", "Ein ganzes Jahr", "1. Mose 7,12"],
+  ["Welcher Vogel kam zu Noah mit einem Ölblatt im Schnabel zurück?", "Eine Taube", "Ein Rabe", "Ein Adler", "Ein Spatz", "1. Mose 8,11"],
+  ["Was setzte Gott nach der Sintflut als Zeichen seines Bundes?", "Einen Regenbogen", "Einen Kometen", "Einen brennenden Dornbusch", "Eine Wolkensäule", "1. Mose 9,13"],
+  ["Wer schuf im 16. Jahrhundert die berühmteste deutsche Bibelübersetzung?", "Martin Luther", "Johann Sebastian Bach", "Johannes Gutenberg", "Albert Schweitzer", ""],
+  ["Wer druckte um 1454 eine berühmte Bibel mit beweglichen Lettern?", "Johannes Gutenberg", "Martin Luther", "Leonardo da Vinci", "Karl der Große", ""],
+  ["Wer tötete seinen Bruder Abel?", "Kain", "Set", "Esau", "Jakob", "1. Mose 4,8"],
+  ["Wie heißt das Buch der Bibel mit 150 Liedern und Gebeten?", "Psalmen", "Sprüche", "Richter", "Römer", ""],
+  ["Die Mauern welcher Stadt stürzten ein, nachdem das Volk mit Posaunen um sie herumgezogen war?", "Jericho", "Jerusalem", "Babylon", "Ninive", "Josua 6"],
+  ["Wem erschien Gott in einem brennenden Dornbusch?", "Mose", "Abraham", "Elia", "Josef", "2. Mose 3"],
+  ["Wer hatte übermenschliche Kraft, solange seine Haare nicht geschnitten wurden?", "Simson", "Goliat", "David", "Samuel", "Richter 16"],
+  ["Wie heißt der Turm, der bis an den Himmel reichen sollte?", "Turm zu Babel", "Turm von Pisa", "Turm Davids", "Turm von Jericho", "1. Mose 11,1–9"],
+  ["Josef bekam von seinem Vater ein Geschenk, das seine Brüder neidisch machte. Was?", "Einen bunten Rock", "Eine goldene Krone", "Einen Siegelring", "Ein Pferd", "1. Mose 37,3"],
+  ["Welcher Jünger ging Jesus auf dem Wasser entgegen und begann zu sinken?", "Petrus", "Johannes", "Judas", "Thomas", "Matthäus 14,28–31"],
+  ["Womit machte Jesus 5000 Männer satt?", "Mit fünf Broten und zwei Fischen", "Mit zwölf Broten und einem Lamm", "Mit sieben Fischen und Honig", "Mit Manna vom Himmel", "Matthäus 14,13–21"],
+  ["Wer taufte Jesus?", "Johannes der Täufer", "Petrus", "Paulus", "Mose", "Markus 1,9"],
+  ["In welchem Fluss wurde Jesus getauft?", "Im Jordan", "Im Nil", "Im Euphrat", "Im Tigris", "Markus 1,9"],
+  ["Was bedeutet das Wort „Evangelium“?", "Gute Nachricht", "Heiliges Gesetz", "Altes Gebet", "Strenges Urteil", ""],
+  ["Wie heißt das Gleichnis von dem Sohn, der sein Erbe verprasst und reumütig heimkehrt?", "Der verlorene Sohn", "Der barmherzige Samariter", "Der reiche Kornbauer", "Die klugen und törichten Jungfrauen", "Lukas 15,11–32"],
+  ["Wer half im Gleichnis Jesu dem Mann, der unter die Räuber gefallen war?", "Ein Samariter", "Ein Priester", "Ein Levit", "Ein römischer Soldat", "Lukas 10,30–37"],
+  ["Welcher König war für seine große Weisheit berühmt?", "Salomo", "Saul", "Herodes", "Nebukadnezar", "1. Könige 3"],
+  ["Wie hieß der Mann von Maria, der Mutter Jesu?", "Josef", "Joachim", "Johannes", "Zacharias", "Matthäus 1,18–24"],
+  ["Welchen Beruf hatten Petrus und sein Bruder Andreas?", "Fischer", "Zimmermann", "Zöllner", "Soldaten", "Matthäus 4,18"],
+  ["Was geschah zu Pfingsten mit den Jüngern?", "Der Heilige Geist kam auf sie", "Jesus wurde geboren", "Jesus wurde gekreuzigt", "Sie bekamen die Zehn Gebote", "Apostelgeschichte 2"],
+  ["Was feiern Christen an Christi Himmelfahrt?", "Dass Jesus zu Gott in den Himmel zurückkehrte", "Die Geburt von Jesus", "Das letzte Abendmahl", "Die Taufe von Jesus", "Apostelgeschichte 1,9–11"],
+  ["Wie hieß das Brot, das die Israeliten in der Wüste vom Himmel bekamen?", "Manna", "Matze", "Challa", "Pita", "2. Mose 16"],
+  ["Wie viele Jahre wanderte das Volk Israel durch die Wüste?", "40 Jahre", "7 Jahre", "12 Jahre", "100 Jahre", "4. Mose 14,33"],
+  ["Wer war der Bruder von Mose, der für ihn sprach?", "Aaron", "Josua", "Kaleb", "Levi", "2. Mose 4,14–16"],
+  ["Wie hieß die Frau von Abraham?", "Sara", "Rebekka", "Rahel", "Lea", "1. Mose 17,15"],
+  ["Wen bekamen Abraham und Sara im hohen Alter geschenkt?", "Einen Sohn namens Isaak", "Eine Tochter namens Mirjam", "Zwillinge namens Kain und Abel", "Einen Sohn namens Josef", "1. Mose 21,1–3"],
+  ["Wie lauten die ersten Worte der Bibel nach Luther?", "„Am Anfang schuf Gott Himmel und Erde.“", "„Es werde Licht.“", "„Im Anfang war das Wort.“", "„Der Herr ist mein Hirte.“", "1. Mose 1,1"],
+  ["Wie beginnt Psalm 23?", "„Der Herr ist mein Hirte“", "„Vater unser im Himmel“", "„Im Anfang war das Wort“", "„Selig sind die Armen“", "Psalm 23,1"],
+  ["Was bedeutet das griechische Wort, von dem „Bibel“ abgeleitet ist?", "Bücher", "Gebete", "Gesetze", "Lieder", ""],
+  ["Welchem König werden viele Psalmen zugeschrieben?", "David", "Saul", "Herodes", "Pharao", ""],
+  ["In der Nähe welcher Stadt wurde Jesus gekreuzigt?", "Jerusalem", "Bethlehem", "Nazareth", "Rom", "Johannes 19,17–20"],
+  ["In welchem Ort wuchs Jesus auf?", "Nazareth", "Bethlehem", "Jericho", "Damaskus", "Lukas 2,39–40"],
+  ["Was schickte Gott über Ägypten, damit der Pharao Israel ziehen ließ?", "Zehn Plagen", "Eine Sintflut", "Ein Erdbeben", "Einen Vulkanausbruch", "2. Mose 7–12"],
+  ["Welcher Jünger verleugnete Jesus dreimal, bevor der Hahn krähte?", "Petrus", "Judas", "Thomas", "Johannes", "Matthäus 26,69–75"],
+  ["Welcher Jünger wollte erst an die Auferstehung glauben, wenn er die Wunden sah?", "Thomas", "Petrus", "Andreas", "Matthäus", "Johannes 20,24–29"],
+  ["Was tat Jesus beim letzten Abendessen für seine Jünger, was sonst Diener taten?", "Er wusch ihnen die Füße", "Er kochte das Essen", "Er schnitt ihnen die Haare", "Er trug ihr Gepäck", "Johannes 13,1–15"],
+  ["Was teilte Jesus beim letzten Abendmahl als Zeichen an seine Jünger aus?", "Brot und Wein", "Fisch und Honig", "Wasser und Salz", "Feigen und Milch", "Lukas 22,19–20"],
+  ["Welches Zeichen ist das wichtigste Symbol des Christentums?", "Das Kreuz", "Der Davidstern", "Der Halbmond", "Das Rad", ""],
+  ["Was tat Jesus mit seinem verstorbenen Freund Lazarus?", "Er erweckte ihn von den Toten", "Er machte ihn zum König", "Er schickte ihn nach Rom", "Er begrub ihn in Bethlehem", "Johannes 11"],
+  ["Wer war Goliat?", "Ein riesiger Krieger der Philister", "Ein König von Israel", "Ein Prophet", "Ein Jünger von Jesus", "1. Samuel 17"],
+  ["Auf welchem Berg erhielt Mose die Zehn Gebote?", "Sinai", "Ararat", "Ölberg", "Zion", "2. Mose 19–20"],
+  ["Auf welchem Gebirge setzte die Arche Noah nach der Flut auf?", "Ararat", "Sinai", "Karmel", "Tabor", "1. Mose 8,4"],
+  ["Was setzten die Soldaten Jesus zum Spott auf den Kopf?", "Eine Dornenkrone", "Einen Lorbeerkranz", "Eine Goldkrone", "Einen Turban", "Matthäus 27,29"],
+  ["Wie viele Söhne hatte Jakob, die Stammväter der Stämme Israels?", "Zwölf", "Sieben", "Zehn", "Drei", "1. Mose 35,22–26"],
+  ["Wie kam Jona wieder an Land?", "Der Fisch spie ihn ans Ufer", "Ein Schiff fand ihn", "Ein Engel trug ihn", "Er schwamm allein ans Ufer", "Jona 2,11"],
+  ["In welche Stadt sollte Jona gehen, um zu predigen?", "Ninive", "Jerusalem", "Rom", "Babylon", "Jona 1,2"],
+  ["Wer schrieb viele Briefe im Neuen Testament, zum Beispiel an die Römer?", "Paulus", "Mose", "David", "Noah", ""],
+  ["Auf dem Weg in welche Stadt begegnete Paulus dem auferstandenen Jesus?", "Damaskus", "Rom", "Athen", "Jericho", "Apostelgeschichte 9,1–9"],
+  ["Was sagte Gott am ersten Schöpfungstag?", "„Es werde Licht!“", "„Es werde Wasser!“", "„Es werde Mensch!“", "„Es werde Nacht!“", "1. Mose 1,3"],
+  ["Von welchem Baum durften Adam und Eva nicht essen?", "Vom Baum der Erkenntnis des Guten und Bösen", "Vom Feigenbaum", "Vom Olivenbaum", "Vom Weinstock", "1. Mose 2,17"],
+  ["Wer verlor Kinder, Besitz und Gesundheit und hielt trotzdem an Gott fest?", "Hiob", "Jona", "Salomo", "Lot", "Hiob 1–2"],
+  ["Wessen Frau erstarrte zur Salzsäule, weil sie zurückblickte?", "Lots Frau", "Noahs Frau", "Abrahams Frau", "Jakobs Frau", "1. Mose 19,26"],
+  ["Welche beiden Städte vernichtete Gott mit Feuer und Schwefel?", "Sodom und Gomorra", "Jericho und Ai", "Babylon und Ninive", "Tyrus und Sidon", "1. Mose 19,24"],
+  ["Welcher Engel kündigte Maria die Geburt von Jesus an?", "Gabriel", "Michael", "Raphael", "Luzifer", "Lukas 1,26–31"],
+  ["Wo wurde Jesus 40 Tage lang vom Teufel versucht?", "In der Wüste", "Auf einem Schiff", "Im Tempel", "In Ägypten", "Matthäus 4,1–11"],
+  ["Was bedeutet das Wort „Amen“?", "So sei es", "Friede", "Gott ist groß", "Vergib uns", ""],
+  ["Was bedeutet „Halleluja“?", "Lobt Gott", "Gott ist bei uns", "Friede sei mit dir", "Heilig, heilig", ""],
+  ["Welcher Tag der Woche ist nach den Zehn Geboten ein Ruhetag?", "Der siebte Tag (Sabbat)", "Der erste Tag", "Der dritte Tag", "Jeder zehnte Tag", "2. Mose 20,8–11"],
+  ["Wer war Pontius Pilatus?", "Der römische Statthalter, der Jesus verurteilte", "Der jüdische Hohepriester", "Ein Jünger von Jesus", "Ein König von Israel", "Matthäus 27"],
+  ["Wer verkaufte Josef als Sklaven?", "Seine eigenen Brüder", "Seine Eltern", "Der Pharao", "Räuber aus Babylon", "1. Mose 37,26–28"],
+  ["Was deutete Josef dem Pharao in Ägypten?", "Seine Träume", "Die Sterne", "Alte Schriften", "Die Handlinien", "1. Mose 41"],
+  ["Welches Baby wurde in einem Kästchen im Schilf des Nils gefunden?", "Mose", "Josef", "Samuel", "Isaak", "2. Mose 2,1–10"],
+  ["Welches Land beschreibt Gott als „Land, darin Milch und Honig fließt“?", "Kanaan, das verheißene Land", "Ägypten", "Babylon", "Griechenland", "2. Mose 3,8"],
+  ["Wie viele Menschen waren in der Arche Noah?", "Acht", "Zwei", "Zwölf", "Vierzig", "1. Petrus 3,20"],
+  ["Welcher Oberzöllner stieg auf einen Baum, um Jesus zu sehen?", "Zachäus", "Matthäus", "Nikodemus", "Lazarus", "Lukas 19,1–10"],
+  ["Welchen Beruf hatte Josef, der Mann von Maria?", "Zimmermann", "Fischer", "Hirte", "Zöllner", "Matthäus 13,55"],
+];
+const Q2 = [
+  ["Wer war der erste König Israels?", "Saul", "David", "Salomo", "Samuel", "1. Samuel 10"],
+  ["Welcher Prophet salbte den jungen David zum König?", "Samuel", "Nathan", "Elia", "Jesaja", "1. Samuel 16,13"],
+  ["Welcher Prophet fuhr in einem feurigen Wagen zum Himmel?", "Elia", "Elisa", "Jesaja", "Jeremia", "2. Könige 2,11"],
+  ["Wer führte Israel nach dem Tod von Mose ins verheißene Land?", "Josua", "Aaron", "Kaleb", "Gideon", "Josua 1"],
+  ["Wie heißen die vier Evangelisten?", "Matthäus, Markus, Lukas, Johannes", "Petrus, Paulus, Jakobus, Johannes", "Matthäus, Markus, Lukas, Paulus", "Andreas, Philippus, Thomas, Johannes", ""],
+  ["Wer gilt als Verfasser der Apostelgeschichte?", "Lukas", "Paulus", "Petrus", "Johannes", "Apostelgeschichte 1,1"],
+  ["Welche Sprache sprach Jesus im Alltag vermutlich?", "Aramäisch", "Latein", "Arabisch", "Ägyptisch", ""],
+  ["In welcher Sprache wurde das Neue Testament geschrieben?", "Griechisch", "Hebräisch", "Latein", "Aramäisch", ""],
+  ["In welcher Sprache wurde das Alte Testament größtenteils geschrieben?", "Hebräisch", "Griechisch", "Latein", "Arabisch", ""],
+  ["Wie viele Bücher hat die Bibel in evangelischer Zählung?", "66", "73", "39", "27", ""],
+  ["Wie viele Bücher hat das Neue Testament?", "27", "39", "12", "66", ""],
+  ["Welche Frucht aßen Adam und Eva laut 1. Mose 3?", "Die Bibel nennt keine bestimmte Frucht", "Einen Apfel", "Eine Feige", "Einen Granatapfel", "1. Mose 3,6"],
+  ["Welche Frau versteckte die israelitischen Kundschafter in Jericho?", "Rahab", "Rut", "Debora", "Delila", "Josua 2"],
+  ["Wer verriet Simson an die Philister?", "Delila", "Isebel", "Rahab", "Batseba", "Richter 16"],
+  ["Wer sagte: „Wo du hingehst, da will ich auch hingehen“?", "Rut", "Noomi", "Ester", "Hanna", "Rut 1,16"],
+  ["Welche Königin rettete ihr Volk vor dem Mordplan Hamans?", "Ester", "Isebel", "Die Königin von Saba", "Waschti", "Ester 7"],
+  ["Wie nannte Johannes der Täufer Jesus, als er ihn kommen sah?", "Lamm Gottes", "Löwe von Juda", "Sohn Davids", "Morgenstern", "Johannes 1,29"],
+  ["In welcher Gestalt kam der Heilige Geist bei der Taufe Jesu herab?", "Wie eine Taube", "Wie ein Feuer", "Wie ein Adler", "Wie eine Wolke", "Matthäus 3,16"],
+  ["Welches Wunder nennt das Johannesevangelium als erstes Zeichen Jesu?", "Wasser zu Wein in Kana", "Die Speisung der 5000", "Die Heilung eines Blinden", "Die Auferweckung des Lazarus", "Johannes 2,11"],
+  ["Wer kam nachts zu Jesus und hörte von ihm, man müsse „von Neuem geboren werden“?", "Nikodemus", "Zachäus", "Josef von Arimathäa", "Lazarus", "Johannes 3,1–8"],
+  ["Welcher Vers beginnt mit „Denn also hat Gott die Welt geliebt …“?", "Johannes 3,16", "Römer 8,28", "Psalm 23,1", "1. Mose 1,1", "Johannes 3,16"],
+  ["Wie viele Tage zeigte sich der Auferstandene seinen Jüngern, bevor er in den Himmel auffuhr?", "40", "3", "7", "50", "Apostelgeschichte 1,3"],
+  ["Wer wurde als Ersatz für Judas zum Apostel gewählt?", "Matthias", "Paulus", "Barnabas", "Stephanus", "Apostelgeschichte 1,26"],
+  ["Wer war der erste christliche Märtyrer?", "Stephanus", "Petrus", "Jakobus", "Paulus", "Apostelgeschichte 7"],
+  ["Welcher Apostel war vorher Zöllner?", "Matthäus", "Petrus", "Johannes", "Thomas", "Matthäus 9,9"],
+  ["Welche zwei Brüder nannte Jesus „Donnersöhne“?", "Jakobus und Johannes", "Petrus und Andreas", "Philippus und Bartholomäus", "Thomas und Matthäus", "Markus 3,17"],
+  ["Wer war der Bruder von Simon Petrus?", "Andreas", "Johannes", "Jakobus", "Philippus", "Johannes 1,40"],
+  ["Was bedeutet der Name „Petrus“?", "Fels", "Fischer", "Freund", "Hirte", "Matthäus 16,18"],
+  ["Wie hieß Petrus ursprünglich?", "Simon", "Saulus", "Levi", "Nathanael", "Matthäus 16,17"],
+  ["Welche Schwester saß zu Jesu Füßen und hörte zu, während die andere arbeitete?", "Maria", "Martha", "Salome", "Elisabeth", "Lukas 10,38–42"],
+  ["Wer war die Mutter von Johannes dem Täufer?", "Elisabeth", "Maria", "Anna", "Hanna", "Lukas 1,57–60"],
+  ["Wovon ernährte sich Johannes der Täufer in der Wüste?", "Von Heuschrecken und wildem Honig", "Von Manna und Wachteln", "Von Brot und Fisch", "Von Datteln und Feigen", "Markus 1,6"],
+  ["Was antwortete Kain, als Gott ihn nach Abel fragte?", "„Soll ich meines Bruders Hüter sein?“", "„Er ist bei den Herden.“", "„Frag unseren Vater.“", "„Er ist nach Eden gegangen.“", "1. Mose 4,9"],
+  ["Wer rang eine Nacht lang mit Gott und erhielt einen neuen Namen?", "Jakob", "Esau", "Abraham", "Josef", "1. Mose 32,23–33"],
+  ["Welchen neuen Namen erhielt Jakob?", "Israel", "Abraham", "Juda", "Benjamin", "1. Mose 32,29"],
+  ["Wofür verkaufte Esau sein Erstgeburtsrecht?", "Für ein Linsengericht", "Für 30 Silberstücke", "Für einen Mantel", "Für ein Kamel", "1. Mose 25,29–34"],
+  ["Wie viele Silberstücke erhielt Judas für den Verrat?", "30", "10", "40", "100", "Matthäus 26,15"],
+  ["Wie heißt der Garten, in dem Jesus vor seiner Verhaftung betete?", "Gethsemane", "Eden", "Golgatha", "Bethanien", "Matthäus 26,36"],
+  ["Was bedeutet „Golgatha“, der Name des Ortes der Kreuzigung?", "Schädelstätte", "Ölberg", "Tränental", "Friedensstadt", "Matthäus 27,33"],
+  ["Wer musste das Kreuz Jesu ein Stück des Weges tragen?", "Simon von Kyrene", "Josef von Arimathäa", "Petrus", "Barabbas", "Markus 15,21"],
+  ["Welcher Gefangene wurde anstelle von Jesus freigelassen?", "Barabbas", "Barnabas", "Bartimäus", "Malchus", "Matthäus 27,15–26"],
+  ["Wer legte Jesus in sein eigenes, neues Grab?", "Josef von Arimathäa", "Nikodemus", "Lazarus", "Petrus", "Matthäus 27,57–60"],
+  ["Wem begegnete der Auferstandene nach dem Johannesevangelium als Erstes?", "Maria Magdalena", "Maria, seiner Mutter", "Petrus", "Thomas", "Johannes 20,11–18"],
+  ["Auf dem Weg in welches Dorf begegnete der Auferstandene zwei Jüngern?", "Emmaus", "Bethlehem", "Kana", "Nain", "Lukas 24,13–35"],
+  ["Was ließ Pilatus über das Kreuz schreiben?", "„Jesus von Nazareth, der König der Juden“", "„Der Sohn Gottes“", "„Feind des Kaisers“", "„Der Messias Israels“", "Johannes 19,19"],
+  ["Welches Gleichnis erzählt von Samen, der auf Weg, Fels, Dornen und gutes Land fällt?", "Vom Sämann", "Vom Senfkorn", "Vom Unkraut unter dem Weizen", "Vom Schatz im Acker", "Matthäus 13,1–23"],
+  ["Womit vergleicht Jesus das Himmelreich, das aus einem winzigen Samen groß wird?", "Mit einem Senfkorn", "Mit einem Weizenkorn", "Mit einem Olivenkern", "Mit einem Dattelkern", "Matthäus 13,31–32"],
+  ["Wie oft soll man nach Jesu Antwort an Petrus vergeben?", "Siebzigmal siebenmal", "Siebenmal", "Dreimal", "Einmal", "Matthäus 18,21–22"],
+  ["Was nennt Jesus das höchste und größte Gebot?", "Gott zu lieben von ganzem Herzen, ganzer Seele und ganzem Gemüt", "Den Sabbat zu heiligen", "Nicht zu töten", "Den Zehnten zu geben", "Matthäus 22,36–38"],
+  ["Wie heißt die große Rede Jesu mit den Seligpreisungen bei Matthäus?", "Bergpredigt", "Feldrede", "Pfingstpredigt", "Abschiedsrede", "Matthäus 5–7"],
+  ["Welche „Frucht des Geistes“ nennt Paulus in Galater 5 zuerst?", "Liebe", "Freude", "Friede", "Geduld", "Galater 5,22"],
+  ["Wie nennt man die fünf Bücher Mose im Judentum?", "Tora", "Talmud", "Mischna", "Kabbala", ""],
+  ["Welcher Prophet kündigte an, eine Jungfrau werde einen Sohn namens Immanuel gebären?", "Jesaja", "Jeremia", "Hesekiel", "Amos", "Jesaja 7,14"],
+  ["Was bedeutet der Name „Immanuel“?", "Gott mit uns", "Gott rettet", "Gott ist mein Richter", "Fürst des Friedens", "Matthäus 1,23"],
+  ["Was bedeutet der Titel „Christus“?", "Der Gesalbte", "Der Sohn", "Der König", "Der Heilige", ""],
+  ["Wie viele Tage lag Lazarus schon im Grab, als Jesus kam?", "Vier", "Drei", "Sieben", "Einen", "Johannes 11,17"],
+  ["Wo sprach Jesus mit der samaritanischen Frau über lebendiges Wasser?", "Am Jakobsbrunnen", "Am Teich Betesda", "Am Jordan", "Im Tempel", "Johannes 4,5–14"],
+  ["Welcher Blinde rief bei Jericho: „Du Sohn Davids, erbarme dich meiner!“?", "Bartimäus", "Barabbas", "Malchus", "Jairus", "Markus 10,46–52"],
+  ["Wessen Tochter erweckte Jesus mit den Worten „Talita kum“?", "Die Tochter des Jairus", "Die Tochter des Zachäus", "Die Tochter des Nikodemus", "Die Tochter des Pilatus", "Markus 5,41"],
+  ["Wem schlug Petrus bei der Verhaftung Jesu ein Ohr ab?", "Malchus", "Kaiphas", "Barabbas", "Hannas", "Johannes 18,10"],
+  ["Wie hieß der Hohepriester, vor dem Jesus verhört wurde?", "Kaiphas", "Aaron", "Eli", "Melchisedek", "Matthäus 26,57"],
+  ["Welches Tier sprach zu Bileam?", "Seine Eselin", "Ein Rabe", "Eine Schlange", "Ein Löwe", "4. Mose 22,28"],
+  ["Welcher Prophet wurde am Bach Krit von Raben mit Brot und Fleisch versorgt?", "Elia", "Elisa", "Jona", "Jeremia", "1. Könige 17,2–6"],
+  ["Gegen wie viele Propheten Baals trat Elia auf dem Berg Karmel an?", "450", "40", "12", "1000", "1. Könige 18,22"],
+  ["Wer war die Mutter des Propheten Samuel?", "Hanna", "Hagar", "Rahel", "Lea", "1. Samuel 1,20"],
+  ["Welchen Sohn sollte Abraham auf dem Berg opfern?", "Isaak", "Ismael", "Jakob", "Esau", "1. Mose 22"],
+  ["Was opferte Abraham schließlich an Stelle seines Sohnes?", "Einen Widder", "Ein Lamm", "Eine Taube", "Einen Stier", "1. Mose 22,13"],
+  ["Welche seiner Frauen liebte Jakob am meisten?", "Rahel", "Lea", "Rebekka", "Silpa", "1. Mose 29,30"],
+  ["Wie hieß Davids enger Freund, der Sohn König Sauls?", "Jonatan", "Abner", "Absalom", "Joab", "1. Samuel 18,1"],
+  ["Welcher Sohn Davids rebellierte gegen ihn und blieb mit dem Kopf in einem Baum hängen?", "Absalom", "Salomo", "Amnon", "Adonija", "2. Samuel 18,9"],
+  ["Wer baute den ersten Tempel in Jerusalem?", "Salomo", "David", "Serubbabel", "Herodes", "1. Könige 6"],
+  ["Welche Königin reiste an, um Salomos Weisheit mit Rätseln zu prüfen?", "Die Königin von Saba", "Kleopatra", "Isebel", "Ester", "1. Könige 10,1"],
+  ["Welche drei Männer überlebten den glühenden Feuerofen?", "Schadrach, Meschach und Abed-Nego", "Petrus, Jakobus und Johannes", "Abraham, Isaak und Jakob", "Sem, Ham und Jafet", "Daniel 3"],
+  ["Welche Worte schrieb eine Hand bei Belsazars Festmahl an die Wand?", "Mene mene tekel u-parsin", "Talita kum", "Hosianna in der Höhe", "Maranata", "Daniel 5,25"],
+  ["Welche drei Jünger nahm Jesus mit auf den Berg der Verklärung?", "Petrus, Jakobus und Johannes", "Petrus, Andreas und Thomas", "Johannes, Judas und Matthäus", "Philippus, Thomas und Andreas", "Matthäus 17,1–8"],
+  ["Wer erschien bei der Verklärung neben Jesus?", "Mose und Elia", "Abraham und David", "Adam und Noah", "Jesaja und Jeremia", "Matthäus 17,3"],
+  ["Mit welchen Worten beginnt das Johannesevangelium?", "„Im Anfang war das Wort“", "„Am Anfang schuf Gott Himmel und Erde“", "„Es begab sich aber zu der Zeit“", "„Dies ist das Buch von der Geschichte Jesu Christi“", "Johannes 1,1"],
+  ["Welches Evangelium beginnt mit einem Stammbaum Jesu?", "Matthäus", "Markus", "Lukas", "Johannes", "Matthäus 1,1–17"],
+  ["Welches ist das kürzeste der vier Evangelien?", "Markus", "Matthäus", "Lukas", "Johannes", ""],
+  ["An welche Gemeinde richtete Paulus den Brief mit dem „Hohelied der Liebe“?", "Korinth", "Rom", "Ephesus", "Philippi", "1. Korinther 13"],
+  ["Wer begleitete Paulus auf seiner ersten Missionsreise?", "Barnabas", "Silas", "Timotheus", "Lukas", "Apostelgeschichte 13,2"],
+  ["Was geschah, als Paulus und Silas im Gefängnis von Philippi Gott lobten?", "Ein Erdbeben öffnete die Türen", "Ein Engel führte sie hinaus", "Der Kaiser begnadigte sie", "Sie gruben einen Tunnel", "Apostelgeschichte 16,25–26"],
+  ["Auf welcher Insel erlitt Paulus Schiffbruch?", "Malta", "Zypern", "Kreta", "Patmos", "Apostelgeschichte 28,1"],
+  ["Auf welcher Insel empfing Johannes die Offenbarung?", "Patmos", "Malta", "Zypern", "Kreta", "Offenbarung 1,9"],
+  ["Wie geht Epheser 2,8 weiter: „Denn aus Gnade seid ihr selig geworden …“?", "„… durch Glauben“", "„… durch gute Werke“", "„… durch das Gesetz“", "„… durch Opfer“", "Epheser 2,8"],
+  ["In welchem Brief beschreibt Paulus die „Waffenrüstung Gottes“ mit Schild des Glaubens und Helm des Heils?", "Epheser", "Römer", "Philipper", "Jakobus", "Epheser 6,10–17"],
+  ["Welche Frau war Richterin und Prophetin in Israel?", "Debora", "Delila", "Rahab", "Mirjam", "Richter 4,4"],
+  ["Mit wie vielen Männern besiegte Gideon die Midianiter?", "300", "12", "3000", "40", "Richter 7,7"],
+  ["Wer war Mirjam?", "Die Schwester von Mose", "Die Mutter von Samuel", "Die Frau von Abraham", "Die Tochter des Pharao", "2. Mose 15,20"],
+  ["Was antwortete Gott Mose am Dornbusch auf die Frage nach seinem Namen?", "„Ich werde sein, der ich sein werde.“", "„Ich bin das A und das O.“", "„Ich bin der gute Hirte.“", "„Ich bin der Weinstock.“", "2. Mose 3,14"],
+  ["Welches „Ich-bin-Wort“ steht in Johannes 14,6?", "„Ich bin der Weg und die Wahrheit und das Leben“", "„Ich bin das Brot des Lebens“", "„Ich bin der gute Hirte“", "„Ich bin das Licht der Welt“", "Johannes 14,6"],
+  ["Welcher König ließ in Bethlehem die kleinen Jungen töten?", "Herodes", "Pilatus", "Augustus", "Saul", "Matthäus 2,16"],
+  ["Welcher Kaiser ordnete die Volkszählung zur Zeit von Jesu Geburt an?", "Augustus", "Nero", "Tiberius", "Julius Cäsar", "Lukas 2,1"],
+  ["Wohin floh Josef mit Maria und dem Kind vor Herodes?", "Nach Ägypten", "Nach Babylon", "Nach Rom", "Nach Syrien", "Matthäus 2,13–15"],
+  ["Wie alt war Jesus, als er im Tempel mit den Lehrern sprach?", "Zwölf", "Sieben", "Dreißig", "Achtzehn", "Lukas 2,42–47"],
+  ["Wie alt war Jesus ungefähr, als er öffentlich zu wirken begann?", "Etwa 30", "Etwa 20", "Etwa 40", "Etwa 12", "Lukas 3,23"],
+  ["Was aßen die Israeliten beim ersten Passa in Ägypten?", "Lamm mit ungesäuertem Brot und bitteren Kräutern", "Fisch und Brot", "Manna und Wachteln", "Ein Linsengericht", "2. Mose 12,8"],
+  ["Was machte Aaron, als Mose lange auf dem Berg Sinai blieb?", "Ein goldenes Kalb", "Eine eherne Schlange", "Eine Bundeslade", "Einen Tempel", "2. Mose 32"],
+  ["Was bedeutet der griechische Name für Pfingsten (pentekoste)?", "Der fünfzigste Tag", "Das Feuer", "Der Geist", "Die Ernte", "Apostelgeschichte 2,1"],
+  ["Wie nennt man den christlichen Glauben an Gott als Vater, Sohn und Heiligen Geist?", "Dreieinigkeit (Trinität)", "Heilige Familie", "Dreikönigsglaube", "Dreifacher Bund", ""],
+];
+const Q3 = [
+  ["Wie viele Bücher zählt das Alte Testament in evangelischen Bibeln?", "39", "46", "27", "24", ""],
+  ["Welches ist das längste Kapitel der Bibel?", "Psalm 119", "Jesaja 53", "1. Mose 1", "Johannes 17", ""],
+  ["Welches ist der kürzeste Psalm?", "Psalm 117", "Psalm 23", "Psalm 1", "Psalm 150", ""],
+  ["Welcher Prophet sollte auf Gottes Geheiß Gomer, eine untreue Frau, heiraten?", "Hosea", "Amos", "Micha", "Joel", "Hosea 1,2–3"],
+  ["Welcher Prophet war Hirte und Maulbeerfeigenzüchter aus Tekoa?", "Amos", "Micha", "Habakuk", "Sacharja", "Amos 1,1; 7,14"],
+  ["Welcher Prophet sah in einer Vision ein Feld voller verdorrter Totengebeine lebendig werden?", "Hesekiel", "Jeremia", "Daniel", "Joel", "Hesekiel 37"],
+  ["Welcher Prophet nennt Bethlehem als Herkunftsort des kommenden Herrschers?", "Micha", "Jesaja", "Maleachi", "Sacharja", "Micha 5,1"],
+  ["In welchem Buch steht: „Er ist um unsrer Missetat willen verwundet“?", "Jesaja", "Jeremia", "Psalmen", "Klagelieder", "Jesaja 53,5"],
+  ["Unter welchem König wurde im Tempel das Gesetzbuch wiedergefunden, was eine Reform auslöste?", "Josia", "Hiskia", "Joschafat", "Manasse", "2. Könige 22"],
+  ["Welchem kranken König schenkte Gott 15 weitere Lebensjahre?", "Hiskia", "Josia", "Asa", "Usija", "2. Könige 20,1–6"],
+  ["Welcher König wurde aussätzig, weil er eigenmächtig im Tempel räucherte?", "Usija", "Ahab", "Jerobeam", "Joas", "2. Chronik 26,16–21"],
+  ["Wie hieß die Frau König Ahabs, die Elia verfolgte?", "Isebel", "Atalja", "Batseba", "Michal", "1. Könige 19,1–2"],
+  ["Wessen Weinberg brachte Ahab durch einen Justizmord Isebels an sich?", "Nabots", "Naamans", "Nabals", "Nathans", "1. Könige 21"],
+  ["Welcher syrische Feldhauptmann wurde durch Untertauchen im Jordan vom Aussatz geheilt?", "Naaman", "Nabal", "Hasaël", "Ben-Hadad", "2. Könige 5"],
+  ["Wie oft sollte Naaman im Jordan untertauchen?", "Siebenmal", "Dreimal", "Zwölfmal", "Einmal", "2. Könige 5,10–14"],
+  ["Welcher Prophet stellte David nach dem Ehebruch mit Batseba zur Rede?", "Nathan", "Gad", "Samuel", "Ahija", "2. Samuel 12"],
+  ["Wer war Batsebas erster Ehemann?", "Uria, der Hetiter", "Joab", "Abner", "Ahitofel", "2. Samuel 11,3"],
+  ["Welcher Richter legte ein Gelübde ab, das seine eigene Tochter traf?", "Jeftah", "Gideon", "Simson", "Ehud", "Richter 11,30–40"],
+  ["Welcher linkshändige Richter tötete den Moabiterkönig Eglon?", "Ehud", "Otniël", "Schamgar", "Barak", "Richter 3,15–22"],
+  ["An welchem Wort erkannte man die Ephraimiter, weil sie es nicht richtig aussprechen konnten?", "Schibbolet", "Sela", "Hosianna", "Hefata", "Richter 12,6"],
+  ["Wie hieß Ruts Schwiegermutter?", "Noomi", "Orpa", "Hanna", "Lea", "Rut 1"],
+  ["Wen heiratete Rut in Bethlehem?", "Boas", "Obed", "Isai", "Elimelech", "Rut 4,13"],
+  ["Welcher berühmte König war Ruts Urenkel?", "David", "Salomo", "Saul", "Josia", "Rut 4,17"],
+  ["Wie hieß der Vater von David?", "Isai", "Obed", "Boas", "Kisch", "1. Samuel 16,1"],
+  ["Wie hieß der Vater von König Saul?", "Kisch", "Isai", "Abner", "Jonatan", "1. Samuel 9,1–2"],
+  ["Bei wem ließ Saul vor seiner letzten Schlacht den Geist Samuels heraufholen?", "Bei der Totenbeschwörerin von En-Dor", "Bei der Witwe von Zarpat", "Bei der Königin von Saba", "Bei der klugen Frau von Tekoa", "1. Samuel 28"],
+  ["Wie hieß Jonatans gelähmter Sohn, dem David Gnade erwies?", "Mefi-Boschet", "Isch-Boschet", "Amasa", "Abischai", "2. Samuel 9"],
+  ["Welche Tochter Sauls wurde Davids erste Frau?", "Michal", "Abigajil", "Batseba", "Merab", "1. Samuel 18,27"],
+  ["Wer hörte als Junge nachts Gottes Ruf und antwortete: „Rede, denn dein Knecht hört“?", "Samuel", "Jeremia", "Jesaja", "David", "1. Samuel 3,10"],
+  ["Bei welchem Priester wuchs Samuel im Heiligtum auf?", "Eli", "Pinhas", "Zadok", "Abjatar", "1. Samuel 2,11"],
+  ["Welcher Prophet erbat sich einen doppelten Anteil von Elias Geist?", "Elisa", "Gehasi", "Micha", "Obadja", "2. Könige 2,9"],
+  ["Wie hieß Elisas Diener, der aus Habgier aussätzig wurde?", "Gehasi", "Baruch", "Naaman", "Obadja", "2. Könige 5,20–27"],
+  ["Wer schrieb Jeremias Worte auf eine Schriftrolle?", "Baruch", "Esra", "Gehasi", "Schafan", "Jeremia 36,4"],
+  ["Welcher persische König erließ im ersten Jahr seiner Herrschaft das Edikt zur Heimkehr und zum Tempelbau?", "Kyrus", "Xerxes", "Kambyses", "Nebukadnezar", "Esra 1,1–4"],
+  ["Wer leitete den Wiederaufbau der Stadtmauern Jerusalems?", "Nehemia", "Esra", "Serubbabel", "Haggai", "Nehemia 2–6"],
+  ["Welches Amt hatte Nehemia am persischen Königshof?", "Mundschenk", "Schreiber", "Feldherr", "Schatzmeister", "Nehemia 1,11"],
+  ["Welche beiden Propheten ermutigten nach dem Exil zum Weiterbau des Tempels?", "Haggai und Sacharja", "Amos und Hosea", "Jesaja und Micha", "Nahum und Habakuk", "Esra 5,1"],
+  ["Gegen welche Stadt richtet sich das Buch Nahum?", "Ninive", "Babylon", "Tyrus", "Damaskus", "Nahum 1,1"],
+  ["Gegen welches Volk richtet sich das Buch Obadja?", "Edom", "Moab", "Assyrien", "Die Philister", "Obadja 1"],
+  ["In welchem Buch wird Gott im hebräischen Text kein einziges Mal ausdrücklich erwähnt?", "Ester", "Rut", "Nehemia", "Klagelieder", ""],
+  ["Wie viele Kapitel hat das Buch Obadja?", "Eines", "Drei", "Vier", "Zwölf", ""],
+  ["Wie beginnt das jüdische Glaubensbekenntnis aus 5. Mose 6,4?", "„Höre, Israel …“", "„Ich bin der Herr, dein Gott …“", "„Der Herr segne dich …“", "„Gelobt sei der Herr …“", "5. Mose 6,4"],
+  ["Aus welcher Stadt stammte Paulus?", "Tarsus", "Antiochia", "Damaskus", "Ephesus", "Apostelgeschichte 22,3"],
+  ["Bei welchem Lehrer wurde Paulus in Jerusalem ausgebildet?", "Gamaliel", "Hillel", "Kaiphas", "Nikodemus", "Apostelgeschichte 22,3"],
+  ["Welches Handwerk übte Paulus aus?", "Zeltmacher", "Fischer", "Töpfer", "Zimmermann", "Apostelgeschichte 18,3"],
+  ["Welcher Mitarbeiter von Paulus wird „der Arzt“ genannt?", "Lukas", "Titus", "Demas", "Markus", "Kolosser 4,14"],
+  ["Welches Ehepaar arbeitete in Korinth mit Paulus als Zeltmacher?", "Aquila und Priszilla", "Hananias und Saphira", "Andronikus und Junia", "Zacharias und Elisabeth", "Apostelgeschichte 18,2–3"],
+  ["Welches Ehepaar starb, nachdem es die Apostel über den Verkaufserlös eines Ackers belogen hatte?", "Hananias und Saphira", "Aquila und Priszilla", "Andronikus und Junia", "Philemon und Apphia", "Apostelgeschichte 5,1–11"],
+  ["Welcher römische Hauptmann in Cäsarea ließ Petrus zu sich holen und wurde mit seinem Haus getauft?", "Kornelius", "Julius", "Lysias", "Longinus", "Apostelgeschichte 10"],
+  ["Welcher junge Mann schlief während einer langen Predigt des Paulus ein und fiel aus dem Fenster?", "Eutychus", "Onesimus", "Tychikus", "Trophimus", "Apostelgeschichte 20,9"],
+  ["Um welchen entlaufenen Sklaven geht es im Philemonbrief?", "Onesimus", "Eutychus", "Epaphras", "Archippus", "Philemon 10"],
+  ["Welche Purpurhändlerin wurde in Philippi Christin?", "Lydia", "Tabita", "Priszilla", "Phöbe", "Apostelgeschichte 16,14"],
+  ["Welche Frau in Joppe erweckte Petrus von den Toten?", "Tabita", "Lydia", "Rhode", "Damaris", "Apostelgeschichte 9,36–41"],
+  ["Welche Magd ließ den befreiten Petrus vor Freude draußen vor dem Tor stehen?", "Rhode", "Tabita", "Lydia", "Damaris", "Apostelgeschichte 12,13–14"],
+  ["Wo predigte Paulus in Athen über den „unbekannten Gott“?", "Auf dem Areopag", "Auf dem Forum Romanum", "Im Tempel der Artemis", "Im Theater von Ephesus", "Apostelgeschichte 17,22–23"],
+  ["Welcher Silberschmied löste in Ephesus einen Aufruhr gegen Paulus aus?", "Demetrius", "Alexander", "Gallio", "Tertullus", "Apostelgeschichte 19,24"],
+  ["Wer sagte zu Paulus: „Es fehlt nicht viel, so wirst du mich noch überreden und einen Christen aus mir machen“?", "König Agrippa", "Festus", "Felix", "Gallio", "Apostelgeschichte 26,28"],
+  ["In welchem Brief steht „Der Gerechte wird aus Glauben leben“, der Schlüsselvers für Luthers Entdeckung?", "Römer", "Jakobus", "Epheser", "Kolosser", "Römer 1,17"],
+  ["Welcher Brief sagt, der Glaube sei tot, wenn er nicht Werke hat?", "Jakobus", "Römer", "Galater", "Hebräer", "Jakobus 2,17"],
+  ["Welches Kapitel wird oft „Galerie der Glaubenszeugen“ genannt?", "Hebräer 11", "Römer 8", "1. Korinther 15", "Johannes 17", "Hebräer 11"],
+  ["Welches Fest erinnert an die Rettung der Juden zur Zeit Esters?", "Purim", "Passa", "Chanukka", "Laubhüttenfest", "Ester 9,26–28"],
+  ["Wie wird das Gebet Jesu in Johannes 17 meist genannt?", "Hohepriesterliches Gebet", "Vaterunser", "Magnificat", "Gebet in Gethsemane", "Johannes 17"],
+  ["Wie viele Gemeinden erhalten in Offenbarung 2–3 ein Sendschreiben?", "Sieben", "Zwölf", "Vier", "Drei", "Offenbarung 2–3"],
+  ["Welche Gemeinde wird in der Offenbarung als „lau“ getadelt?", "Laodizea", "Ephesus", "Smyrna", "Philadelphia", "Offenbarung 3,15–16"],
+  ["Welcher Gemeinde wirft Christus vor, die „erste Liebe“ verlassen zu haben?", "Ephesus", "Laodizea", "Sardes", "Thyatira", "Offenbarung 2,4"],
+  ["Welche Zahl nennt Offenbarung 13 als Zahl des Tieres?", "666", "777", "144", "1000", "Offenbarung 13,18"],
+  ["Wie viele Versiegelte aus den Stämmen Israels nennt Offenbarung 7?", "144.000", "12.000", "1.000", "70.000", "Offenbarung 7,4"],
+  ["Welcher König von Salem und Priester segnete Abraham und erhielt den Zehnten?", "Melchisedek", "Abimelech", "Jitro", "Laban", "1. Mose 14,18–20"],
+  ["Wie hieß der Schwiegervater von Mose?", "Jitro", "Laban", "Kaleb", "Hur", "2. Mose 18,1"],
+  ["Wie hieß die Frau von Mose?", "Zippora", "Mirjam", "Rahel", "Tamar", "2. Mose 2,21"],
+  ["Welche beiden Kundschafter brachten einen zuversichtlichen Bericht über Kanaan?", "Josua und Kaleb", "Mose und Aaron", "Nadab und Abihu", "Datan und Abiram", "4. Mose 14,6–9"],
+  ["Wer stützte Moses Arme im Kampf gegen Amalek?", "Aaron und Hur", "Josua und Kaleb", "Nadab und Abihu", "Eleasar und Pinhas", "2. Mose 17,12"],
+  ["Was ließ Mose anfertigen, damit von Schlangen Gebissene beim Hinsehen am Leben blieben?", "Eine eherne Schlange", "Ein goldenes Kalb", "Einen silbernen Stab", "Einen bronzenen Altar", "4. Mose 21,8–9"],
+  ["Wessen Stab grünte über Nacht und trug Mandeln?", "Aarons Stab", "Moses Stab", "Josuas Stab", "Korachs Stab", "4. Mose 17"],
+  ["Welche Söhne Aarons starben, weil sie „fremdes Feuer“ darbrachten?", "Nadab und Abihu", "Eleasar und Itamar", "Hofni und Pinhas", "Datan und Abiram", "3. Mose 10,1–2"],
+  ["Was befand sich nach Hebräer 9,4 in der Bundeslade?", "Die Bundestafeln, ein Krug mit Manna und Aarons Stab", "Nur die Tora-Rolle", "Der siebenarmige Leuchter", "Gold und Weihrauch", "Hebräer 9,4"],
+  ["Wie viele Jahre sollte die Herrschaft Babels nach Jeremia dauern?", "70", "40", "400", "7", "Jeremia 29,10"],
+  ["Wie viele Jahre diente Jakob Laban für seine beiden Frauen Lea und Rahel?", "14", "7", "12", "21", "1. Mose 31,41"],
+  ["Welcher Bruder Josefs wurde in Ägypten als Geisel festgehalten?", "Simeon", "Ruben", "Juda", "Benjamin", "1. Mose 42,24"],
+  ["Welcher Bruder schlug vor, Josef zu verkaufen, statt ihn sterben zu lassen?", "Juda", "Ruben", "Levi", "Dan", "1. Mose 37,26–27"],
+  ["Wie hießen die beiden Söhne Josefs?", "Manasse und Ephraim", "Perez und Serach", "Er und Onan", "Gad und Asser", "1. Mose 41,50–52"],
+  ["Aus welcher Stadt brach Abrahams Familie ursprünglich auf?", "Ur in Chaldäa", "Haran", "Babel", "Ninive", "1. Mose 11,31"],
+  ["Wie alt wurde Metuschelach, der älteste Mensch der Bibel?", "969 Jahre", "930 Jahre", "950 Jahre", "777 Jahre", "1. Mose 5,27"],
+  ["Wer wandelte mit Gott und wurde nicht mehr gesehen, weil Gott ihn hinwegnahm?", "Henoch", "Metuschelach", "Lamech", "Set", "1. Mose 5,24"],
+  ["Wie hießen Noahs drei Söhne?", "Sem, Ham und Jafet", "Kain, Abel und Set", "Abraham, Nahor und Haran", "Ruben, Simeon und Levi", "1. Mose 6,10"],
+  ["Welcher Prophet klagte „Herr, wie lange soll ich schreien?“ und hörte, der Gerechte werde durch seinen Glauben leben?", "Habakuk", "Hosea", "Haggai", "Zefanja", "Habakuk 1,2; 2,4"],
+  ["Welches Buch beginnt mit dem Ausruf „Es ist alles ganz eitel“?", "Prediger (Kohelet)", "Sprüche", "Hiob", "Klagelieder", "Prediger 1,2"],
+  ["Wie viele Freunde kamen zunächst, um Hiob zu trösten?", "Drei", "Zwei", "Sieben", "Zwölf", "Hiob 2,11"],
+  ["Wie heißt der junge Mann, der nach Hiobs drei Freunden das Wort ergreift?", "Elihu", "Elifas", "Bildad", "Zofar", "Hiob 32"],
+  ["Welcher der zwölf Apostel wurde laut Apostelgeschichte als Erster hingerichtet?", "Jakobus, der Bruder des Johannes", "Petrus", "Andreas", "Thomas", "Apostelgeschichte 12,1–2"],
+  ["Wo steht der Aaronitische Segen („Der Herr segne dich und behüte dich …“)?", "4. Mose 6,24–26", "5. Mose 6,4–5", "2. Mose 20,2–3", "Psalm 121,7–8", "4. Mose 6,24–26"],
+  ["Welches dieser Gleichnisse steht nur im Lukasevangelium?", "Der barmherzige Samariter", "Der Sämann", "Das Senfkorn", "Die bösen Weingärtner", "Lukas 10,25–37"],
+  ["Welches Wunder berichten alle vier Evangelien?", "Die Speisung der 5000", "Wasser zu Wein", "Die Auferweckung des Lazarus", "Die Heilung der zehn Aussätzigen", ""],
+  ["Wie viele der zehn geheilten Aussätzigen kehrten um, um Jesus zu danken?", "Einer", "Neun", "Drei", "Keiner", "Lukas 17,11–19"],
+  ["Aus welchem Psalm stammt Jesu Ruf am Kreuz „Mein Gott, mein Gott, warum hast du mich verlassen?“", "Psalm 22", "Psalm 23", "Psalm 51", "Psalm 110", "Matthäus 27,46; Psalm 22,2"],
+  ["Was bedeutet das aramäische „Hefata“, das Jesus zu einem Taubstummen sprach?", "Tu dich auf", "Steh auf", "Sei still", "Geh hin in Frieden", "Markus 7,34"],
+  ["Was bedeutet der urchristliche Gebetsruf „Maranata“?", "Unser Herr, komm!", "Gott ist mit uns", "Der Herr ist auferstanden", "Friede sei mit euch", "1. Korinther 16,22"],
+  ["In welcher Stadt wurden die Jünger zuerst „Christen“ genannt?", "Antiochia", "Jerusalem", "Rom", "Korinth", "Apostelgeschichte 11,26"],
+  ["Welcher Bruder Jesu leitete später die Gemeinde in Jerusalem?", "Jakobus", "Judas", "Simon", "Joses", "Apostelgeschichte 15,13; Galater 1,19"],
+  ["Welche jüdische Gruppe bestritt die Auferstehung der Toten?", "Die Sadduzäer", "Die Pharisäer", "Die Essener", "Die Zeloten", "Apostelgeschichte 23,8"],
+];
+const Q4 = [
+  ["Wie heißt die griechische Übersetzung der hebräischen Bibel aus dem 3.–1. Jahrhundert v. Chr.?", "Septuaginta", "Vulgata", "Peschitta", "Vetus Latina", ""],
+  ["Wer schuf die lateinische Übersetzung, die als Vulgata bekannt wurde?", "Hieronymus", "Augustinus", "Origenes", "Tertullian", ""],
+  ["Welcher Kirchenvater stellte in der Hexapla hebräischen Text und griechische Übersetzungen in Spalten nebeneinander?", "Origenes", "Hieronymus", "Eusebius", "Irenäus", ""],
+  ["Was bezeichnet man als Masoretischen Text?", "Den von jüdischen Gelehrten überlieferten hebräischen Text mit Vokal- und Akzentzeichen", "Die älteste griechische Übersetzung", "Eine aramäische Paraphrase für den Synagogengottesdienst", "Die Bibelkommentare aus Qumran", ""],
+  ["Welches biblische Buch ist unter den Qumranfunden als nahezu vollständige Schriftrolle erhalten?", "Jesaja", "Genesis", "Psalmen", "Daniel", ""],
+  ["Wie nennt man die aramäischen Übersetzungen der hebräischen Bibel?", "Targumim", "Midraschim", "Pescharim", "Megillot", ""],
+  ["Wie heißt die klassische syrische Bibelübersetzung?", "Peschitta", "Vulgata", "Vetus Latina", "Hexapla", ""],
+  ["Welcher Codex des 4. Jahrhunderts wurde von Tischendorf im Katharinenkloster am Sinai entdeckt?", "Codex Sinaiticus", "Codex Vaticanus", "Codex Alexandrinus", "Codex Bezae", ""],
+  ["Welches Papyrusfragment mit Versen aus Johannes 18 gilt oft als ältester erhaltener Textzeuge des NT?", "P52 (Rylands-Papyrus)", "P46", "P66", "P75", ""],
+  ["Welcher Papyrus (um 200) enthält eine frühe Sammlung der Paulusbriefe?", "P46", "P52", "P75", "P66", ""],
+  ["Wer veröffentlichte 1516 die erste im Handel erschienene Druckausgabe des griechischen NT?", "Erasmus von Rotterdam", "Martin Luther", "Johannes Reuchlin", "Philipp Melanchthon", ""],
+  ["Was bezeichnet das „Comma Johanneum“?", "Einen trinitarischen Zusatz in 1. Johannes 5,7–8", "Den längeren Markusschluss", "Die Perikope von der Ehebrecherin", "Die Doxologie am Ende des Vaterunsers", ""],
+  ["Welcher Abschnitt fehlt in den ältesten Handschriften des Johannesevangeliums?", "Die Perikope von der Ehebrecherin (Joh 7,53–8,11)", "Der Prolog (Joh 1,1–18)", "Das Hohepriesterliche Gebet (Joh 17)", "Die Fußwaschung (Joh 13)", ""],
+  ["Mit welchem Vers endet das Markusevangelium in den Codices Sinaiticus und Vaticanus?", "Markus 16,8", "Markus 16,20", "Markus 15,47", "Markus 16,14", ""],
+  ["Wie heißt die verbreitetste Erklärung, nach der Matthäus und Lukas Markus und eine Spruchquelle benutzten?", "Zwei-Quellen-Theorie", "Griesbach-Hypothese", "Urevangeliumshypothese", "Fragmentenhypothese", ""],
+  ["Wofür steht das Siglum „Q“ in der Synoptikerforschung?", "Für eine erschlossene Logienquelle", "Für das Sondergut des Matthäus", "Für die Qumran-Schriften", "Für ein verlorenes aramäisches Matthäusevangelium", ""],
+  ["Welche Hypothese vertritt die Markuspriorität ohne Q, wobei Lukas auch Matthäus kannte?", "Farrer-Hypothese", "Griesbach-Hypothese", "Zwei-Quellen-Theorie", "Augustinische Hypothese", ""],
+  ["Nach welcher Hypothese ist Markus eine Zusammenfassung von Matthäus und Lukas?", "Griesbach-Hypothese", "Farrer-Hypothese", "Zwei-Quellen-Theorie", "Augustinische Hypothese", ""],
+  ["Welche Quellenschriften unterscheidet die klassische Neuere Urkundenhypothese zum Pentateuch?", "J, E, D, P", "Q, M, L, Mk", "A, B, C, D", "J, E, P, H", ""],
+  ["Mit welchem Forscher ist die klassische Formulierung der Neueren Urkundenhypothese verbunden?", "Julius Wellhausen", "Rudolf Bultmann", "Gerhard von Rad", "Hermann Gunkel", ""],
+  ["Welche Quellenschrift wird klassisch mit dem Gottesnamen JHWH schon in der Urgeschichte verbunden?", "Jahwist (J)", "Elohist (E)", "Priesterschrift (P)", "Deuteronomium (D)", ""],
+  ["Welcher Quelle wird 1. Mose 1,1–2,4a klassisch zugeordnet?", "Priesterschrift", "Jahwist", "Elohist", "Deuteronomist", ""],
+  ["Wer begründete 1943 die These vom Deuteronomistischen Geschichtswerk?", "Martin Noth", "Julius Wellhausen", "Albrecht Alt", "Hermann Gunkel", ""],
+  ["Wer gilt als Begründer der formgeschichtlichen Gattungsforschung am Alten Testament, etwa bei den Psalmen?", "Hermann Gunkel", "Martin Noth", "Walther Eichrodt", "Claus Westermann", ""],
+  ["Was meint der von Gunkel geprägte Begriff „Sitz im Leben“?", "Die typische soziale Situation, in der eine Textgattung verwendet wurde", "Den Wohnort des Verfassers", "Die Lebensdaten eines Propheten", "Die Stellung eines Buches im Kanon", ""],
+  ["Welche drei Forscher gelten als Begründer der neutestamentlichen Formgeschichte?", "Dibelius, Bultmann und K. L. Schmidt", "Barth, Brunner und Gogarten", "Harnack, Troeltsch und Ritschl", "Käsemann, Bornkamm und Conzelmann", ""],
+  ["Mit welchem hermeneutischen Programm ist Rudolf Bultmann vor allem verbunden?", "Entmythologisierung", "Kanonische Schriftauslegung", "Befreiungstheologie", "Heilsgeschichtliche Typologie", ""],
+  ["Wer eröffnete 1953 mit einem Vortrag die „neue Frage“ nach dem historischen Jesus?", "Ernst Käsemann", "Albert Schweitzer", "Rudolf Bultmann", "Joachim Jeremias", ""],
+  ["Wer zog 1906 in einer großen Studie Bilanz über die Leben-Jesu-Forschung?", "Albert Schweitzer", "Adolf von Harnack", "Ernst Troeltsch", "Wilhelm Bousset", ""],
+  ["Wer stellte 1901 die These vom „Messiasgeheimnis“ im Markusevangelium auf?", "William Wrede", "Adolf von Harnack", "Johannes Weiß", "David Friedrich Strauß", ""],
+  ["Wer veröffentlichte 1835 „Das Leben Jesu, kritisch bearbeitet“?", "David Friedrich Strauß", "Ferdinand Christian Baur", "Ernest Renan", "Friedrich Schleiermacher", ""],
+  ["Welches Kriterium der Jesusforschung hält Überlieferungen für echt, die weder aus dem Judentum noch aus der Urkirche ableitbar sind?", "Differenzkriterium (Unähnlichkeitskriterium)", "Kohärenzkriterium", "Kriterium der Mehrfachbezeugung", "Kriterium der Anstößigkeit", ""],
+  ["Wer entwickelte mit Dagmar Winter das „historische Plausibilitätskriterium“?", "Gerd Theißen", "Ernst Käsemann", "John P. Meier", "Günther Bornkamm", ""],
+  ["Welche Stelle wird in der christlichen Tradition als „Protevangelium“ bezeichnet?", "1. Mose 3,15", "Jesaja 7,14", "1. Mose 12,3", "Micha 5,1", ""],
+  ["Wie heißt der Begriff für die Selbstentäußerung Christi nach Philipper 2,7?", "Kenosis", "Parusie", "Anamnese", "Perichorese", "Philipper 2,7"],
+  ["Welchen Begriff prägte E. P. Sanders 1977 für das Religionsmuster des palästinischen Judentums?", "Bundesnomismus (covenantal nomism)", "Werkgerechtigkeit", "Spätjudentum", "Apokalyptischer Messianismus", ""],
+  ["Was besagt die textkritische Regel „lectio difficilior probabilior“?", "Die schwierigere Lesart ist eher ursprünglich", "Die kürzere Lesart ist immer ursprünglich", "Die Mehrheitslesart ist ursprünglich", "Die älteste Handschrift hat immer recht", ""],
+  ["Welches Konzil formulierte 451 die Lehre von den zwei Naturen Christi „unvermischt und ungetrennt“?", "Chalcedon", "Nizäa", "Ephesus", "Konstantinopel", ""],
+  ["Welcher griechische Begriff bezeichnet in Nizäa (325) die Wesensgleichheit des Sohnes mit dem Vater?", "homoousios", "homoiousios", "hypostasis", "prosopon", ""],
+  ["Welche Ausgabe ist die Standard-Handausgabe des griechischen Neuen Testaments?", "Nestle-Aland (Novum Testamentum Graece)", "Biblia Hebraica Stuttgartensia", "Rahlfs-Hanhart", "Stuttgarter Vulgata", ""],
+  ["Wer verwarf im 2. Jahrhundert das Alte Testament und stellte einen Kanon aus Lukas und zehn Paulusbriefen zusammen?", "Markion", "Arius", "Pelagius", "Montanus", ""],
+  ["Welches frühe Verzeichnis neutestamentlicher Schriften veröffentlichte L. A. Muratori 1740?", "Das Muratorische Fragment", "Den 39. Osterfestbrief", "Das Decretum Gelasianum", "Die Kirchengeschichte des Eusebius", ""],
+  ["Welcher Bischof nannte 367 in seinem 39. Osterfestbrief genau die 27 Bücher des heutigen NT?", "Athanasius von Alexandria", "Eusebius von Caesarea", "Origenes", "Augustinus", ""],
+  ["Wie bezeichnet Eusebius die in der Kirche umstrittenen Schriften wie Jakobus oder 2. Petrus?", "Antilegomena", "Homologumena", "Apokryphen", "Pseudepigraphen", ""],
+  ["Welche vier Bücher stellte Luther ans Ende seines Neuen Testaments?", "Hebräer, Jakobus, Judas und Offenbarung", "Jakobus, 2. Petrus, 2. und 3. Johannes", "Offenbarung, Judas, 2. Petrus und Titus", "Hebräer, Jakobus, Philemon und Judas", ""],
+  ["Wie nannte Luther 1522 den Jakobusbrief im Vergleich zu den Hauptschriften des NT?", "„Eine rechte stroherne Epistel“", "„Das Herzstück der Schrift“", "„Eine Epistel ohne Verfasser“", "„Die Summe des Evangeliums“", ""],
+  ["Welche Gruppe gehört zu den deuterokanonischen Büchern der katholischen Bibel?", "Tobit, Judit, 1.–2. Makkabäer, Weisheit, Sirach, Baruch", "Henoch, Jubiläen und Thomasevangelium", "Didache, Hirt des Hermas und Barnabasbrief", "3. und 4. Esra, Gebet des Manasse und Psalm 151", ""],
+  ["Welches Konzil legte 1546 den katholischen Kanon einschließlich der Deuterokanonen verbindlich fest?", "Das Konzil von Trient", "Das Erste Vatikanische Konzil", "Das Zweite Vatikanische Konzil", "Das Vierte Laterankonzil", ""],
+  ["Wie viele Bücher hat das Alte Testament in katholischer Zählung?", "46", "39", "49", "51", ""],
+  ["In welche drei Teile gliedert sich der Tanach?", "Tora, Nevi'im, Ketuvim", "Tora, Talmud, Midrasch", "Mischna, Gemara, Tosefta", "Gesetz, Weisheit, Apokalyptik", ""],
+  ["Mit welchem Buch schließt der Tanach in der üblichen Anordnung?", "2. Chronik", "Maleachi", "Daniel", "Ester", ""],
+  ["Welches Buch steht im Tanach bei den Schriften (Ketuvim), in christlichen Bibeln aber bei den Propheten?", "Daniel", "Jesaja", "Hosea", "Josua", ""],
+  ["Welche fünf Bücher bilden die Megillot (Festrollen)?", "Hoheslied, Rut, Klagelieder, Prediger, Ester", "Rut, Ester, Jona, Daniel, Esra", "Psalmen, Sprüche, Hiob, Prediger, Hoheslied", "Tobit, Judit, Ester, Rut, Jona", ""],
+  ["Welches Wort lesen Juden aus Ehrfurcht anstelle des Gottesnamens JHWH?", "Adonaj", "Elohim", "Schaddai", "Zebaoth", ""],
+  ["Wie entstand die Namensform „Jehova“?", "Aus den Konsonanten JHWH mit den Vokalen von Adonaj", "Aus einer griechischen Umschrift der Septuaginta", "Aus einem aramäischen Titel", "Aus der lateinischen Vulgata", ""],
+  ["Welches hebräische Verb für „erschaffen“ in 1. Mose 1,1 hat im Grundstamm nur Gott als Subjekt?", "bara", "asah", "jazar", "kanah", "1. Mose 1,1"],
+  ["Welches hebräische Wort für Güte und Bundestreue prägt besonders die Psalmen?", "Chesed", "Schalom", "Tora", "Ruach", ""],
+  ["Welches hebräische Wort bedeutet sowohl „Geist“ als auch „Wind“ und „Atem“?", "Ruach", "Nefesch", "Basar", "Leb", ""],
+  ["Welches griechische Wort steht in Johannes 1,1 für „Wort“?", "Logos", "Rhema", "Mythos", "Kerygma", "Johannes 1,1"],
+  ["Welches Wort steht im griechischen Text von Johannes 19,30 für „Es ist vollbracht“?", "tetelestai", "hosanna", "ephphatha", "maranatha", "Johannes 19,30"],
+  ["Was bezeichnet der Begriff „Kerygma“?", "Die urchristliche Verkündigung", "Die Gemeinschaft der Gläubigen", "Die ethische Unterweisung", "Den Gottesdienstablauf", ""],
+  ["Auf welcher Handschrift beruht die Biblia Hebraica Stuttgartensia?", "Codex Leningradensis", "Aleppo-Codex", "Codex Sinaiticus", "Große Jesajarolle aus Qumran", ""],
+  ["Welche Teile des Alten Testaments sind auf Aramäisch verfasst?", "Abschnitte in Daniel und Esra sowie Jeremia 10,11", "Die Psalmen 1–41", "Das Buch Ester", "Prediger 1–3", ""],
+  ["Welches Buch des AT ist in vier seiner fünf Kapitel ein alphabetisches Akrostichon?", "Klagelieder", "Psalmen", "Sprüche", "Hoheslied", ""],
+  ["Welcher Psalm ist ein achtfaches alphabetisches Akrostichon?", "Psalm 119", "Psalm 23", "Psalm 51", "Psalm 90", ""],
+  ["Welcher Psalm trägt die Überschrift „Ein Gebet des Mose“?", "Psalm 90", "Psalm 1", "Psalm 51", "Psalm 110", "Psalm 90,1"],
+  ["Welcher Psalm wird im Neuen Testament am häufigsten zitiert oder angespielt?", "Psalm 110", "Psalm 23", "Psalm 119", "Psalm 1", ""],
+  ["Welches Stilmerkmal prägt die hebräische Poesie am stärksten?", "Parallelismus membrorum", "Endreim", "Hexameter", "Stabreim", ""],
+  ["Welcher jüdischen Gruppe werden die Qumran-Schriften meist zugeordnet?", "Den Essenern", "Den Sadduzäern", "Den Pharisäern", "Den Zeloten", ""],
+  ["Wie heißt die Qumran-Auslegungsform, die Prophetentexte direkt auf die Gegenwart der Gemeinschaft deutet?", "Pescher", "Midrasch", "Targum", "Halacha", ""],
+  ["Wie heißt die religionsgesetzliche Auslegung im rabbinischen Judentum, im Unterschied zur erzählenden Haggada?", "Halacha", "Kabbala", "Masora", "Targum", ""],
+  ["Welcher jüdische Historiker erwähnt Jesus im sogenannten Testimonium Flavianum?", "Flavius Josephus", "Philo von Alexandria", "Tacitus", "Sueton", ""],
+  ["Welcher römische Historiker erwähnt Christus im Zusammenhang mit dem Brand Roms unter Nero?", "Tacitus", "Sueton", "Plinius der Ältere", "Cassius Dio", ""],
+  ["Welche Inschrift hilft, den Aufenthalt des Paulus in Korinth zu datieren?", "Die Gallio-Inschrift von Delphi", "Die Pilatus-Inschrift von Caesarea", "Die Mescha-Stele", "Die Siloah-Inschrift", "Apostelgeschichte 18,12"],
+  ["Welcher Fund von 1961 in Caesarea Maritima nennt Pontius Pilatus?", "Die Pilatus-Inschrift", "Die Tel-Dan-Stele", "Die Gallio-Inschrift", "Die Mescha-Stele", ""],
+  ["Welche Inschrift enthält die älteste allgemein anerkannte außerbiblische Erwähnung des „Hauses David“?", "Die Tel-Dan-Stele", "Die Siloah-Inschrift", "Der Kyros-Zylinder", "Die Merenptah-Stele", ""],
+  ["Welches Dokument enthält die älteste außerbiblische Erwähnung „Israels“ (um 1208 v. Chr.)?", "Die Merenptah-Stele", "Die Tel-Dan-Stele", "Die Mescha-Stele", "Der Kyros-Zylinder", ""],
+  ["Welcher Text wird oft mit dem Rückkehredikt in Esra 1 verglichen?", "Der Kyros-Zylinder", "Der Codex Hammurabi", "Das Gilgamesch-Epos", "Das Enuma Elisch", "Esra 1,1–4"],
+  ["Welches mesopotamische Epos enthält eine Fluterzählung, die oft mit 1. Mose 6–9 verglichen wird?", "Das Gilgamesch-Epos", "Das Enuma Elisch", "Der Baal-Zyklus", "Der Codex Hammurabi", ""],
+  ["Wann wurde der erste Tempel in Jerusalem von den Babyloniern zerstört?", "587/586 v. Chr.", "722 v. Chr.", "538 v. Chr.", "70 n. Chr.", ""],
+  ["Wann eroberten die Assyrer Samaria, die Hauptstadt des Nordreichs?", "722/721 v. Chr.", "587 v. Chr.", "931 v. Chr.", "332 v. Chr.", ""],
+  ["Welcher Seleukidenherrscher entweihte 167 v. Chr. den Jerusalemer Tempel?", "Antiochus IV. Epiphanes", "Antiochus III.", "Ptolemaios II.", "Seleukos I.", ""],
+  ["Welches Buch des AT datiert die historisch-kritische Forschung in seiner Endgestalt meist um 165 v. Chr.?", "Daniel", "Jesaja", "Ester", "Maleachi", ""],
+  ["Welcher neutestamentliche Brief zitiert das Henochbuch?", "Judas", "2. Petrus", "Jakobus", "Hebräer", "Judas 14–15"],
+  ["Welcher Paulusbrief gilt meist als der älteste erhaltene?", "1. Thessalonicher", "Römer", "2. Korinther", "Philipper", ""],
+  ["Wie viele Paulusbriefe gelten in der historisch-kritischen Forschung als unumstritten echt?", "Sieben", "Dreizehn", "Vier", "Zehn", ""],
+  ["Welche Briefe nennt man „Pastoralbriefe“?", "1. und 2. Timotheus und Titus", "Epheser, Kolosser und Philemon", "1. und 2. Petrus und Judas", "Hebräer, Jakobus und 1. Johannes", ""],
+  ["Welche Briefe zählen zu den „Katholischen Briefen“?", "Jakobus, 1.–2. Petrus, 1.–3. Johannes und Judas", "Römer bis Philemon", "Hebräer und die Pastoralbriefe", "Nur die drei Johannesbriefe", ""],
+  ["Welche Kapitel des Jesajabuchs bezeichnet die Forschung meist als Deuterojesaja?", "Jesaja 40–55", "Jesaja 1–39", "Jesaja 56–66", "Jesaja 24–27", ""],
+  ["Wer grenzte 1892 die vier Gottesknechtslieder bei Jesaja ab?", "Bernhard Duhm", "Julius Wellhausen", "Hermann Gunkel", "Gerhard von Rad", ""],
+  ["Mit welchem Wort gibt die Septuaginta das hebräische „alma“ in Jesaja 7,14 wieder?", "parthenos", "neanis", "gyne", "kore", "Jesaja 7,14"],
+  ["Wie bezeichnet die Forschung 2. Mose 20,22–23,33?", "Bundesbuch", "Heiligkeitsgesetz", "Deuteronomisches Gesetz", "Dekalog", ""],
+  ["Wie heißt die Sammlung 3. Mose 17–26 in der Forschung?", "Heiligkeitsgesetz", "Bundesbuch", "Deuteronomisches Gesetz", "Dekalog", ""],
+  ["Wer prägte 1926 die These einer „Thronfolgegeschichte Davids“ (2. Samuel 9–20; 1. Könige 1–2)?", "Leonhard Rost", "Martin Noth", "Albrecht Alt", "Gerhard von Rad", ""],
+  ["Wie nennt man die mittelalterliche Lehre vom vierfachen Schriftsinn?", "Quadriga", "Hexapla", "Catena", "Glossa ordinaria", ""],
+  ["Welche vier Schriftsinne unterscheidet die Quadriga?", "Wörtlich, allegorisch, moralisch, anagogisch", "Historisch, kritisch, kanonisch, existenzial", "Grammatisch, rhetorisch, logisch, mystisch", "Literal, typologisch, prophetisch, eschatologisch", ""],
+  ["Welcher reformatorische Grundsatz besagt, dass die Schrift sich selbst auslegt?", "Sacra scriptura sui ipsius interpres", "Sola gratia", "Ecclesia semper reformanda", "Lex orandi, lex credendi", ""],
+  ["Welche altkirchliche Auslegungsschule betonte die allegorische Deutung?", "Alexandria", "Antiochia", "Rom", "Karthago", ""],
+  ["Wer entwickelte den „canonical approach“ der Schriftauslegung?", "Brevard S. Childs", "Rudolf Bultmann", "Walter Brueggemann", "Gerhard von Rad", ""],
+  ["Wer veröffentlichte 1957/60 eine zweibändige „Theologie des Alten Testaments“ mit überlieferungsgeschichtlichem Ansatz?", "Gerhard von Rad", "Walther Eichrodt", "Ludwig Köhler", "Claus Westermann", ""],
+];
+
+const LEVELS = [
+  { name: "Einsteiger", who: "Für Neugierige ohne Vorwissen", q: Q1 },
+  { name: "Neu im Glauben", who: "Für frische Christen", q: Q2 },
+  { name: "Erfahren", who: "Für Christen mit guter Bibelkenntnis", q: Q3 },
+  { name: "Theologie", who: "Für studierte Theologen", q: Q4 },
+];
+
+// Punkte: 100 für jede richtige Antwort plus Tempo-Bonus, der in WINDOW Sekunden von 100 auf 0 fällt
+const BASE = 100, BONUS = 100, WINDOW = 20;
+
+const $ = (id) => document.getElementById(id);
+const nf = new Intl.NumberFormat("de-DE");
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const secs = (s) => s.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " s";
+const dur = (s) => {
+  const t = Math.round(s);
+  return t < 60 ? secs(s) : `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")} min`;
+};
+const bonusFor = (s) => Math.round(BONUS * Math.max(0, 1 - s / WINDOW));
+const answerText = (q, k) => q[1 + k];
+
+const store = {
+  get(k, d) {
+    try { const v = localStorage.getItem("bibelquiz:" + k); return v === null ? d : JSON.parse(v); } catch { return d; }
+  },
+  set(k, v) {
+    try { localStorage.setItem("bibelquiz:" + k, JSON.stringify(v)); } catch {}
+  },
+};
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+const range = (n) => [...Array(n).keys()];
+
+// Zieht Fragen aus einem gemischten Stapel pro Stufe, damit sich Fragen erst wiederholen, wenn alle dran waren
+function draw(li, n) {
+  const total = LEVELS[li].q.length;
+  if (n >= total) return shuffle(range(total));
+  let deck = store.get("deck" + li, []).filter((i) => Number.isInteger(i) && i < total);
+  const out = [];
+  while (out.length < n) {
+    if (!deck.length) deck = shuffle(range(total).filter((i) => !out.includes(i)));
+    out.push(deck.shift());
+  }
+  store.set("deck" + li, deck);
+  return out;
+}
+
+let S = { screen: "start", len: [10, 20, 100].includes(store.get("len", 10)) ? store.get("len", 10) : 10, run: null };
+let t0 = 0, raf = 0, quitTimer = 0;
+
+function show(screen) {
+  S.screen = screen;
+  for (const id of ["start", "quiz", "result"]) $(id).hidden = id !== screen;
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Start ---------- */
+
+function renderStart() {
+  show("start");
+  $("len-" + S.len).checked = true;
+  $("levels").innerHTML = LEVELS.map((lv, li) => {
+    const n = Math.min(S.len, lv.q.length);
+    const best = store.get(`best-${li}-${n}`, null);
+    const meter = range(4).map((k) => `<i${k <= li ? ' class="on"' : ""}></i>`).join("");
+    return `<button type="button" class="level" data-level="${li}">
+      <span class="meter" aria-hidden="true">${meter}</span>
+      <span class="lv-name">${esc(lv.name)}</span>
+      <span class="lv-who">${esc(lv.who)}</span>
+      <span class="lv-meta">${lv.q.length} Fragen · ${best === null ? "noch nicht gespielt" : `Bestwert <b>${nf.format(best)}</b>`}</span>
+    </button>`;
+  }).join("");
+}
+
+$("levels").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-level]");
+  if (b) startRound(Number(b.dataset.level));
+});
+for (const r of document.querySelectorAll('input[name="len"]')) {
+  r.addEventListener("change", () => {
+    S.len = Number(r.value);
+    store.set("len", S.len);
+    renderStart();
+  });
+}
+
+/* ---------- Runde ---------- */
+
+function startRound(li) {
+  const n = Math.min(S.len, LEVELS[li].q.length);
+  S.run = { li, ids: draw(li, n), i: 0, score: 0, log: [], cur: null, result: null };
+  show("quiz");
+  showQuestion();
+}
+
+function showQuestion() {
+  const r = S.run, lv = LEVELS[r.li], q = lv.q[r.ids[r.i]];
+  if (!r.cur) r.cur = { order: shuffle(range(4)), elapsed: 0, answered: false, pick: -1, pts: 0 };
+  const c = r.cur;
+
+  $("q-level").textContent = lv.name;
+  $("q-pos").textContent = `${r.i + 1} von ${r.ids.length}`;
+  $("q-score").textContent = nf.format(r.score);
+  $("q-progress").style.width = `${(r.i / r.ids.length) * 100}%`;
+  $("q-text").textContent = q[0];
+  $("answers").innerHTML = c.order.map((a, k) =>
+    `<button type="button" class="answer" data-k="${k}"><span class="key">${"ABCD"[k]}</span><span class="txt">${esc(answerText(q, a))}</span></button>`
+  ).join("");
+  resetQuit();
+
+  if (c.answered) {
+    paintTimer(c.elapsed);
+    showFeedback();
+  } else {
+    $("feedback").hidden = true;
+    $("next").hidden = true;
+    startTimer();
+  }
+}
+
+function startTimer() {
+  cancelAnimationFrame(raf);
+  t0 = performance.now() - S.run.cur.elapsed * 1000;
+  const step = () => {
+    S.run.cur.elapsed = (performance.now() - t0) / 1000;
+    paintTimer(S.run.cur.elapsed);
+    raf = requestAnimationFrame(step);
+  };
+  step();
+}
+
+function paintTimer(s) {
+  const b = bonusFor(s);
+  $("t-bar").style.transform = `scaleX(${b / BONUS})`;
+  $("t-bonus").textContent = b;
+  $("t-time").textContent = secs(s);
+}
+
+function answer(k) {
+  const r = S.run, c = r.cur;
+  if (!c || c.answered) return;
+  cancelAnimationFrame(raf);
+  c.elapsed = (performance.now() - t0) / 1000;
+  c.pick = c.order[k];
+  const ok = c.pick === 0;
+  c.pts = ok ? BASE + bonusFor(c.elapsed) : 0;
+  c.answered = true;
+  r.score += c.pts;
+  r.log.push({ id: r.ids[r.i], pick: c.pick, ok, secs: c.elapsed, pts: c.pts });
+  paintTimer(c.elapsed);
+  $("q-score").textContent = nf.format(r.score);
+  showFeedback();
+}
+
+function showFeedback() {
+  const r = S.run, c = r.cur, q = LEVELS[r.li].q[r.ids[r.i]];
+  const ok = c.pick === 0;
+  document.querySelectorAll(".answer").forEach((b) => {
+    const a = c.order[Number(b.dataset.k)];
+    b.disabled = true;
+    b.classList.toggle("is-correct", a === 0);
+    b.classList.toggle("is-wrong", a === c.pick && !ok);
+    b.classList.toggle("is-dim", a !== 0 && a !== c.pick);
+  });
+  const fb = $("feedback");
+  fb.className = "feedback " + (ok ? "ok" : "no");
+  $("fb-head").textContent = ok ? `Richtig · +${c.pts} Punkte` : "Leider falsch · 0 Punkte";
+  $("fb-answer").textContent = ok ? `100 Punkte plus ${c.pts - BASE} Tempo-Bonus` : `Richtig ist: ${q[1]}`;
+  $("fb-sub").textContent = `Antwortzeit ${secs(c.elapsed)}` + (q[5] ? ` · Nachlesen: ${q[5]}` : "");
+  fb.hidden = false;
+  const last = r.i === r.ids.length - 1;
+  $("next").textContent = last ? "Ergebnis ansehen" : "Nächste Frage";
+  $("next").hidden = false;
+  $("next").focus({ preventScroll: true });
+}
+
+$("answers").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-k]");
+  if (b) answer(Number(b.dataset.k));
+});
+
+$("next").addEventListener("click", () => {
+  const r = S.run;
+  r.i++;
+  r.cur = null;
+  if (r.i >= r.ids.length) finish();
+  else { showQuestion(); window.scrollTo(0, 0); }
+});
+
+function resetQuit() {
+  clearTimeout(quitTimer);
+  $("quit").classList.remove("armed");
+  $("quit").textContent = "Beenden";
+}
+$("quit").addEventListener("click", () => {
+  const q = $("quit");
+  if (!q.classList.contains("armed")) {
+    q.classList.add("armed");
+    q.textContent = "Wirklich beenden?";
+    quitTimer = setTimeout(resetQuit, 3500);
+    return;
+  }
+  resetQuit();
+  cancelAnimationFrame(raf);
+  S.run = null;
+  renderStart();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (S.screen !== "quiz" || !S.run?.cur || S.run.cur.answered) return;
+  const k = "1234".indexOf(e.key);
+  if (k >= 0) answer(k);
+});
+
+/* ---------- Ergebnis ---------- */
+
+function finish() {
+  const r = S.run;
+  const key = `best-${r.li}-${r.ids.length}`;
+  const prev = store.get(key, null);
+  const isBest = r.score > 0 && (prev === null || r.score > prev);
+  if (isBest) store.set(key, r.score);
+  r.result = { prev, isBest };
+  renderResult();
+}
+
+function renderResult() {
+  const r = S.run, lv = LEVELS[r.li], n = r.ids.length;
+  show("result");
+  const right = r.log.filter((x) => x.ok).length;
+  const total = r.log.reduce((s, x) => s + x.secs, 0);
+  $("r-title").textContent = `Runde beendet · ${lv.name}`;
+  $("r-score").innerHTML = `${nf.format(r.score)} <small>von ${nf.format(n * (BASE + BONUS))} Punkten</small>`;
+  const chip = $("r-best");
+  chip.classList.toggle("best", r.result.isBest);
+  chip.textContent = r.result.isBest
+    ? (r.result.prev === null ? "Erster Bestwert" : `Neuer Bestwert · vorher ${nf.format(r.result.prev)}`)
+    : `Bestwert: ${nf.format(r.result.prev ?? 0)}`;
+  $("r-right").textContent = `${right} von ${n}`;
+  $("r-time").textContent = dur(total);
+  $("r-avg").textContent = secs(n ? total / n : 0);
+
+  const missed = r.log.filter((x) => !x.ok);
+  $("r-review-label").textContent = missed.length ? `Zum Nachlesen (${missed.length})` : "Zum Nachlesen";
+  $("r-review").innerHTML = missed.length
+    ? missed.map((x) => {
+        const q = lv.q[x.id];
+        return `<li>
+          <p class="wq">${esc(q[0])}</p>
+          <p class="yours">Deine Antwort: ${esc(answerText(q, x.pick))}</p>
+          <p class="right">Richtig: ${esc(q[1])}</p>
+          ${q[5] ? `<p class="ref">${esc(q[5])}</p>` : ""}
+        </li>`;
+      }).join("")
+    : `<li><p class="allright">Alle Fragen richtig beantwortet.</p></li>`;
+}
+
+$("again").addEventListener("click", () => startRound(S.run.li));
+$("home").addEventListener("click", () => { S.run = null; renderStart(); });
+
+/* ---------- Start und Erhalt des Spielstands bei Updates der Seite ---------- */
+
+function validRun(run) {
+  return run && LEVELS[run.li] && Array.isArray(run.ids) && run.ids.every((i) => i < LEVELS[run.li].q.length) && run.i < run.ids.length + 1;
+}
+
+function boot(data) {
+  const saved = data && data.S;
+  if (saved && (saved.screen === "start" || validRun(saved.run))) S = saved;
+  if (S.screen === "quiz" && S.run && S.run.i < S.run.ids.length) { show("quiz"); showQuestion(); }
+  else if (S.screen === "result" && S.run?.result) renderResult();
+  else { S.run = null; renderStart(); }
+}
+
+window.claude?.hot?.snapshot?.(() => ({ S }));
+window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>
