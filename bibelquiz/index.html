@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bibelquiz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +42,10 @@
   }
 
   * { box-sizing: border-box; }
+  :root { padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px); }
+  [hidden] { display: none !important; }
   body {
+    margin: 0;
     background: var(--bg);
     color: var(--ink);
     font-family: var(--font-body);
@@ -286,6 +294,8 @@
   }
 </style>
 
+</head>
+<body>
 <div class="app">
   <section class="screen" id="start">
     <p class="eyebrow">Vier Stufen · 400 Fragen</p>
@@ -1046,3 +1056,5 @@ function boot(data) {
 window.claude?.hot?.snapshot?.(() => ({ S }));
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
 </script>
+</body>
+</html>
