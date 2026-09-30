@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Genesis · 66 Rooms</title>
+<meta name="description" content="A pop-up memory palace for the Bible. Walk the fifty chapters of Genesis as twenty objects, then retell the book from memory.">
+<meta name="theme-color" content="#0d0b13">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/room.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="module" src="js/main.js"></script>
+</head>
+<body>
+<canvas id="stage" aria-label="The Genesis room, a pop-up book with twenty objects arranged in a horseshoe"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div id="loader" class="loader" role="status">
+  <span class="loader-mark">66</span>
+  <span class="loader-text">Folding the paper…</span>
+</div>
+
+<section id="intro" class="intro" aria-labelledby="introTitle">
+  <div class="intro-copy">
+    <p class="eyebrow">66 Rooms · Room 1 of 66</p>
+    <h1 id="introTitle">Genesis</h1>
+    <p class="lede">A pop-up memory palace for the Bible. Walk all fifty chapters as twenty objects in four colored movements — then empty the room and retell the book from memory.</p>
+    <button id="openBook" class="btn primary big" disabled>Open the book</button>
+    <p class="fine">Sound on · ← → to walk · drag to look around</p>
+  </div>
+</section>
+
+<header class="topbar ui">
+  <div class="brand">
+    <span class="brand-mark">66</span>
+    <span class="brand-text"><b>66 Rooms</b><small><span class="room-no">Room 1 · </span>Genesis</small></span>
+  </div>
+  <nav class="tools" aria-label="Room tools">
+    <div class="seg" role="group" aria-label="Mode">
+      <button data-mode="walk" class="on" aria-pressed="true">Walk</button>
+      <button data-mode="recall" aria-pressed="false">Recall</button>
+    </div>
+    <button id="btnOverview" class="icon" title="Whole room (Esc)" aria-label="See the whole room">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0M12 3v4M12 17v4M3 12h4M17 12h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+    <button id="btnNotes" class="icon" title="Your notes" aria-label="Your notes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <span class="badge" hidden>0</span>
+    </button>
+    <button id="btnSound" class="icon" title="Sound" aria-label="Sound on" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="mute" d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </nav>
+</header>
+
+<aside id="card" class="card ui" aria-live="polite"></aside>
+
+<aside id="drawer" class="drawer" aria-label="Your notes" hidden>
+  <div class="drawer-head">
+    <div>
+      <p class="eyebrow dark">Kept on this device</p>
+      <h2 class="title">Your notes</h2>
+    </div>
+    <button class="icon dark" data-act="close-drawer" aria-label="Close notes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body"></div>
+  <div class="drawer-foot">
+    <button class="btn ghost dark" data-act="export">Download as Markdown</button>
+  </div>
+</aside>
+
+<footer class="flow ui" aria-label="The flow of Genesis">
+  <button id="prev" class="nav" aria-label="Previous object">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div id="flowTrack" class="flow-track"></div>
+  <button id="next" class="nav" aria-label="Next object">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+</footer>
+
+<div id="tooltip" class="tooltip" hidden></div>
+<div id="toast" class="toast" role="status"></div>
+</body>
+</html>
